@@ -10,9 +10,12 @@ func TestNewMemStorage(t *testing.T) {
 	if ms == nil {
 		t.Errorf("NewMemStorage returned nil")
 	}
-	if ms.metrics == nil {
-		t.Errorf("Metrics map is nil")
+	if ms != nil {
+		if ms.metrics == nil {
+			t.Errorf("Metrics map is nil")
+		}
 	}
+
 }
 
 func TestGetMetric(t *testing.T) {
