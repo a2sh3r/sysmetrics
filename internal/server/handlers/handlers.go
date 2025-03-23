@@ -18,6 +18,11 @@ func NewHandler(service *metric.Service) *Handler {
 }
 
 func (h *Handler) UpdateMetric(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.Header().Set("Date", time.Now().UTC().Format("Mon, 02 Jan 2006 15:04:05 GMT"))
 
@@ -35,7 +40,7 @@ func (h *Handler) UpdateMetric(w http.ResponseWriter, r *http.Request) {
 	case "gauge":
 		value, err := strconv.ParseFloat(metricValue, 64)
 		if err != nil {
-			http.Error(w, "Invalid gauge metric value", http.StatusBadRequest)
+			http.Error(w, fmt.Sprintf("Failed to update metric: %s", err), http.StatusBadRequest)
 			return
 		}
 		if err := h.service.UpdateGaugeMetric(metricName, value); err != nil {
@@ -45,7 +50,7 @@ func (h *Handler) UpdateMetric(w http.ResponseWriter, r *http.Request) {
 	case "counter":
 		value, err := strconv.ParseInt(metricValue, 10, 64)
 		if err != nil {
-			http.Error(w, "Invalid counter metric value", http.StatusBadRequest)
+			http.Error(w, fmt.Sprintf("Failed to update metric: %s", err), http.StatusBadRequest)
 			return
 		}
 		if err := h.service.UpdateCounterMetric(metricName, value); err != nil {
@@ -53,7 +58,7 @@ func (h *Handler) UpdateMetric(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	default:
-		http.Error(w, "Invalid metric type", http.StatusBadRequest)
+		http.Error(w, "Failed to update metric: invalid metric type", http.StatusBadRequest)
 		return
 	}
 
