@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/a2sh3r/sysmetrics/internal/server/storage"
+	"github.com/a2sh3r/sysmetrics/internal/server/services/metric"
 	"net/http"
 	"strconv"
 	"strings"
@@ -10,11 +10,11 @@ import (
 )
 
 type Handler struct {
-	storage *storage.MemStorage
+	service *metric.Service
 }
 
-func NewHandler(storage *storage.MemStorage) *Handler {
-	return &Handler{storage: storage}
+func NewHandler(service *metric.Service) *Handler {
+	return &Handler{service: service}
 }
 
 func (h *Handler) UpdateMetric(w http.ResponseWriter, r *http.Request) {
@@ -31,8 +31,6 @@ func (h *Handler) UpdateMetric(w http.ResponseWriter, r *http.Request) {
 	metricName := parts[3]
 	metricValue := parts[4]
 
-	var metric storage.Metric
-
 	switch metricType {
 	case "gauge":
 		value, err := strconv.ParseFloat(metricValue, 64)
@@ -40,21 +38,22 @@ func (h *Handler) UpdateMetric(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Invalid gauge metric value", http.StatusBadRequest)
 			return
 		}
-		metric = storage.Metric{Type: "gauge", Value: value}
+		if err := h.service.UpdateGaugeMetric(metricName, value); err != nil {
+			http.Error(w, fmt.Sprintf("Failed to update metric: %s", err), http.StatusInternalServerError)
+			return
+		}
 	case "counter":
 		value, err := strconv.ParseInt(metricValue, 10, 64)
 		if err != nil {
-			http.Error(w, "Invalid gauge metric value", http.StatusBadRequest)
+			http.Error(w, "Invalid counter metric value", http.StatusBadRequest)
 			return
 		}
-		metric = storage.Metric{Type: "counter", Value: value}
+		if err := h.service.UpdateCounterMetric(metricName, value); err != nil {
+			http.Error(w, fmt.Sprintf("Failed to update metric: %s", err), http.StatusInternalServerError)
+			return
+		}
 	default:
 		http.Error(w, "Invalid metric type", http.StatusBadRequest)
-		return
-	}
-
-	if err := h.storage.UpdateMetric(metricName, metric); err != nil {
-		http.Error(w, fmt.Sprintf("Failed to update metric: %s", err), http.StatusInternalServerError)
 		return
 	}
 

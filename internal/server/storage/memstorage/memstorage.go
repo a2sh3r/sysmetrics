@@ -1,4 +1,4 @@
-package storage
+package memstorage
 
 import (
 	"errors"
@@ -11,6 +11,7 @@ var (
 	ErrStorageNil        = errors.New("MemStorage is nil")
 	ErrMetricsMapNil     = errors.New("metrics map is nil")
 	ErrMetricTypeInvalid = errors.New("invalid value type for metric")
+	ErrMetricInvalidName = errors.New("invalid metric error")
 )
 
 type MemStorage struct {
@@ -52,6 +53,9 @@ func (ms *MemStorage) GetMetric(name string) (Metric, error) {
 }
 
 func (ms *MemStorage) UpdateMetric(name string, metric Metric) error {
+	if name == "" {
+		return ErrMetricInvalidName
+	}
 	if ms == nil {
 		return ErrStorageNil
 	}
