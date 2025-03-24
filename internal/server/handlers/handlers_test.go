@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
 	"github.com/a2sh3r/sysmetrics/internal/server/services/metric"
 	"github.com/a2sh3r/sysmetrics/internal/server/storage/memstorage"
 	"net/http"
@@ -10,7 +11,8 @@ import (
 
 func TestHandler_UpdateMetric(t *testing.T) {
 	storage := memstorage.NewMemStorage()
-	metricService := metric.NewService(storage)
+	metricRepo := repositories.NewMetricRepo(storage)
+	metricService := metric.NewService(metricRepo)
 	handler := NewHandler(metricService)
 
 	tests := []struct {

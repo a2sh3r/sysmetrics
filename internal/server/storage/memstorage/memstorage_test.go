@@ -2,6 +2,7 @@ package memstorage
 
 import (
 	"errors"
+	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
 	"testing"
 )
 
@@ -20,7 +21,7 @@ func TestNewMemStorage(t *testing.T) {
 
 func TestGetMetric(t *testing.T) {
 	ms := NewMemStorage()
-	_ = ms.UpdateMetric("test", Metric{"gauge", 156.14})
+	_ = ms.UpdateMetric("test", repositories.Metric{Type: "gauge", Value: 156.14})
 
 	metric, err := ms.GetMetric("test")
 	if err != nil {
@@ -39,7 +40,7 @@ func TestGetMetric(t *testing.T) {
 func TestUpdateMetric_NewCounter(t *testing.T) {
 	ms := NewMemStorage()
 
-	err := ms.UpdateMetric("test_int64", Metric{Type: "counter", Value: int64(10)})
+	err := ms.UpdateMetric("test_int64", repositories.Metric{Type: "counter", Value: int64(10)})
 	if err != nil {
 		t.Fatalf("UpdateMetric failed: %v", err)
 	}
@@ -57,12 +58,12 @@ func TestUpdateMetric_NewCounter(t *testing.T) {
 func TestUpdateMetric_UpdateCounter(t *testing.T) {
 	ms := NewMemStorage()
 
-	err := ms.UpdateMetric("test_int64", Metric{Type: "counter", Value: int64(10)})
+	err := ms.UpdateMetric("test_int64", repositories.Metric{Type: "counter", Value: int64(10)})
 	if err != nil {
 		t.Fatalf("UpdateMetric failed: %v", err)
 	}
 
-	err = ms.UpdateMetric("test_int64", Metric{Type: "counter", Value: int64(5)})
+	err = ms.UpdateMetric("test_int64", repositories.Metric{Type: "counter", Value: int64(5)})
 	if err != nil {
 		t.Fatalf("UpdateMetric failed: %v", err)
 	}
@@ -80,7 +81,7 @@ func TestUpdateMetric_UpdateCounter(t *testing.T) {
 func TestUpdateMetric_NewGauge(t *testing.T) {
 	ms := NewMemStorage()
 
-	err := ms.UpdateMetric("test_float64", Metric{Type: "gauge", Value: float64(3.14)})
+	err := ms.UpdateMetric("test_float64", repositories.Metric{Type: "gauge", Value: 3.14})
 	if err != nil {
 		t.Fatalf("UpdateMetric failed: %v", err)
 	}
@@ -98,12 +99,12 @@ func TestUpdateMetric_NewGauge(t *testing.T) {
 func TestUpdateMetric_UpdateGauge(t *testing.T) {
 	ms := NewMemStorage()
 
-	err := ms.UpdateMetric("test_float64", Metric{Type: "gauge", Value: float64(3.14)})
+	err := ms.UpdateMetric("test_float64", repositories.Metric{Type: "gauge", Value: 3.14})
 	if err != nil {
 		t.Fatalf("UpdateMetric failed: %v", err)
 	}
 
-	err = ms.UpdateMetric("test_float64", Metric{Type: "gauge", Value: float64(2.71)})
+	err = ms.UpdateMetric("test_float64", repositories.Metric{Type: "gauge", Value: 2.71})
 	if err != nil {
 		t.Fatalf("UpdateMetric failed: %v", err)
 	}
@@ -121,12 +122,12 @@ func TestUpdateMetric_UpdateGauge(t *testing.T) {
 func TestUpdateMetric_InvalidType(t *testing.T) {
 	ms := NewMemStorage()
 
-	err := ms.UpdateMetric("test_invalid", Metric{Type: "invalid", Value: "some_value"})
+	err := ms.UpdateMetric("test_invalid", repositories.Metric{Type: "invalid", Value: "some_value"})
 	if err == nil {
 		t.Fatal("Expected error for invalid metric type, got nil")
 	}
 
-	if err != ErrMetricTypeInvalid {
+	if !errors.Is(err, ErrMetricInvalidType) {
 		t.Fatalf("Expected ErrMetricTypeInvalid, got %v", err)
 	}
 }
@@ -134,12 +135,12 @@ func TestUpdateMetric_InvalidType(t *testing.T) {
 func TestUpdateMetric_NilStorage(t *testing.T) {
 	var ms *MemStorage = nil
 
-	err := ms.UpdateMetric("test_nil", Metric{Type: "counter", Value: int64(10)})
+	err := ms.UpdateMetric("test_nil", repositories.Metric{Type: "counter", Value: int64(10)})
 	if err == nil {
 		t.Fatal("Expected error for nil storage, got nil")
 	}
 
-	if err != ErrStorageNil {
+	if !errors.Is(err, ErrStorageNil) {
 		t.Fatalf("Expected ErrStorageNil, got %v", err)
 	}
 }
@@ -148,12 +149,12 @@ func TestUpdateMetric_NilMetricsMap(t *testing.T) {
 	ms := NewMemStorage()
 	ms.metrics = nil
 
-	err := ms.UpdateMetric("test_nil_map", Metric{Type: "counter", Value: int64(10)})
+	err := ms.UpdateMetric("test_nil_map", repositories.Metric{Type: "counter", Value: int64(10)})
 	if err == nil {
 		t.Fatal("Expected error for nil metrics map, got nil")
 	}
 
-	if err != ErrMetricsMapNil {
+	if !errors.Is(err, ErrMetricsMapNil) {
 		t.Fatalf("Expected ErrMetricsMapNil, got %v", err)
 	}
 }

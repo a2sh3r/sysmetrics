@@ -3,6 +3,7 @@ package memstorage
 import (
 	"errors"
 	"fmt"
+	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
 	"sync"
 )
 
@@ -10,49 +11,40 @@ var (
 	ErrMetricNotFound    = errors.New("metric not found")
 	ErrStorageNil        = errors.New("MemStorage is nil")
 	ErrMetricsMapNil     = errors.New("metrics map is nil")
-	ErrMetricTypeInvalid = errors.New("invalid value type for metric")
+	ErrMetricInvalidType = errors.New("invalid value type for metric")
 	ErrMetricInvalidName = errors.New("invalid metric error")
 )
 
 type MemStorage struct {
-	metrics map[string]Metric
+	metrics map[string]repositories.Metric
 	mu      sync.RWMutex
-}
-
-type Metric struct {
-	Type  string
-	Value interface{}
-}
-
-type MetricInterface interface {
-	AddMetric(value interface{}) error
 }
 
 func NewMemStorage() *MemStorage {
 	return &MemStorage{
-		metrics: make(map[string]Metric),
+		metrics: make(map[string]repositories.Metric),
 	}
 }
 
-func (ms *MemStorage) GetMetric(name string) (Metric, error) {
+func (ms *MemStorage) GetMetric(name string) (repositories.Metric, error) {
 	if ms == nil {
-		return Metric{}, ErrStorageNil
+		return repositories.Metric{}, ErrStorageNil
+	}
+
+	if ms.metrics == nil {
+		return repositories.Metric{}, ErrMetricsMapNil
 	}
 
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
 
-	if ms.metrics == nil {
-		return Metric{}, ErrMetricsMapNil
-	}
-
 	if m, ok := ms.metrics[name]; ok {
 		return m, nil
 	}
-	return Metric{}, ErrMetricNotFound
+	return repositories.Metric{}, ErrMetricNotFound
 }
 
-func (ms *MemStorage) UpdateMetric(name string, metric Metric) error {
+func (ms *MemStorage) UpdateMetric(name string, metric repositories.Metric) error {
 	if name == "" {
 		return ErrMetricInvalidName
 	}
@@ -68,7 +60,7 @@ func (ms *MemStorage) UpdateMetric(name string, metric Metric) error {
 	}
 
 	if metric.Type != "counter" && metric.Type != "gauge" {
-		return ErrMetricTypeInvalid
+		return ErrMetricInvalidType
 	}
 
 	existingMetric, exists := ms.metrics[name]
@@ -79,7 +71,7 @@ func (ms *MemStorage) UpdateMetric(name string, metric Metric) error {
 	}
 
 	if existingMetric.Type != metric.Type {
-		return ErrMetricTypeInvalid
+		return ErrMetricInvalidType
 	}
 
 	switch metric.Type {
@@ -94,16 +86,16 @@ func (ms *MemStorage) UpdateMetric(name string, metric Metric) error {
 			return err
 		}
 	default:
-		return ErrMetricTypeInvalid
+		return ErrMetricInvalidType
 	}
 	ms.metrics[name] = existingMetric
 	return nil
 }
 
-func (ms *MemStorage) updateCounterMetric(existingMetric *Metric, newMetric Metric) error {
+func (ms *MemStorage) updateCounterMetric(existingMetric *repositories.Metric, newMetric repositories.Metric) error {
 	newValue, ok := newMetric.Value.(int64)
 	if !ok {
-		return ErrMetricTypeInvalid
+		return ErrMetricInvalidType
 	}
 
 	if existingMetric.Value == nil {
@@ -113,14 +105,14 @@ func (ms *MemStorage) updateCounterMetric(existingMetric *Metric, newMetric Metr
 
 	existingValue, ok := existingMetric.Value.(int64)
 	if !ok {
-		return ErrMetricTypeInvalid
+		return ErrMetricInvalidType
 	}
 
 	existingMetric.Value = existingValue + newValue
 	return nil
 }
 
-func (ms *MemStorage) updateGaugeMetric(existingMetric *Metric, newMetric Metric) error {
+func (ms *MemStorage) updateGaugeMetric(existingMetric *repositories.Metric, newMetric repositories.Metric) error {
 	newValue, ok := newMetric.Value.(float64)
 	if !ok {
 		return fmt.Errorf("6, %T, %v", newMetric.Value, ok)

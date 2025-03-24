@@ -1,21 +1,21 @@
 package metric
 
 import (
-	"github.com/a2sh3r/sysmetrics/internal/server/storage/memstorage"
+	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
 )
 
 type Service struct {
-	storage *memstorage.MemStorage
+	repo repositories.MetricRepository
 }
 
-func NewService(storage *memstorage.MemStorage) *Service {
-	return &Service{storage: storage}
+func NewService(repo repositories.MetricRepository) *Service {
+	return &Service{repo: repo}
 }
 
 func (s *Service) UpdateGaugeMetric(name string, value float64) error {
-	return s.storage.UpdateMetric(name, memstorage.Metric{Type: "gauge", Value: value})
+	return s.repo.SaveMetric(name, value, "gauge")
 }
 
 func (s *Service) UpdateCounterMetric(name string, value int64) error {
-	return s.storage.UpdateMetric(name, memstorage.Metric{Type: "counter", Value: value})
+	return s.repo.SaveMetric(name, value, "counter")
 }
