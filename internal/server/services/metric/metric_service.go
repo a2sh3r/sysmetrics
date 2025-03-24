@@ -17,5 +17,5 @@ func (s *Service) UpdateGaugeMetric(name string, value float64) error {
 }
 
 func (s *Service) UpdateCounterMetric(name string, value int64) error {
-	return s.storage.UpdateMetric(name, memstorage.Metric{Type: "counter", Value: float64(value)})
+	return s.storage.UpdateMetric(name, memstorage.Metric{Type: "counter", Value: value})
 }
