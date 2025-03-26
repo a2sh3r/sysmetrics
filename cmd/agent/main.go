@@ -1,26 +1,22 @@
 package main
 
 import (
-	"github.com/a2sh3r/sysmetrics/internal/agent/collector"
+	"context"
+	"github.com/a2sh3r/sysmetrics/internal/agent"
 	"github.com/a2sh3r/sysmetrics/internal/agent/config"
-	"github.com/a2sh3r/sysmetrics/internal/agent/sender"
 	"log"
-	"time"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
 	cfg := config.NewConfig()
 
-	metricCollector := collector.NewCollector()
-	metricSender := sender.NewSender(cfg.ServerAddress)
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
 
-	for {
-		metrics := metricCollector.CollectMetrics()
+	metricAgent := agent.NewAgent(cfg)
 
-		if err := metricSender.SendMetrics(metrics); err != nil {
-			log.Printf("Error sending metrics: %v\n", err)
-		}
-
-		time.Sleep(cfg.ReportInterval)
-	}
+	log.Println("Starting agent...")
+	metricAgent.Run(ctx)
 }

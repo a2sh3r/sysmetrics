@@ -49,40 +49,41 @@ func (s *Sender) sendMetric(metricType, metricName string, value interface{}) er
 		return fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	// Логируем ответ от сервера
 	log.Printf("Server response (status %d): %s", res.StatusCode, string(body))
 
 	return nil
 }
 
-func (s *Sender) SendMetrics(m *metrics.Metrics) error {
-	v := reflect.ValueOf(m).Elem()
-	t := v.Type()
+func (s *Sender) SendMetrics(metricsBatch []*metrics.Metrics) error {
+	for _, m := range metricsBatch {
+		v := reflect.ValueOf(m).Elem()
+		t := v.Type()
 
-	for i := 0; i < v.NumField(); i++ {
-		fieldValue := v.Field(i)
-		fieldName := t.Field(i).Name
+		for i := 0; i < v.NumField(); i++ {
+			fieldValue := v.Field(i)
+			fieldName := t.Field(i).Name
 
-		var metricType string
-		if fieldName == "PollCount" {
-			metricType = "counter"
-		} else {
-			metricType = "gauge"
-		}
+			var metricType string
+			if fieldName == "PollCount" {
+				metricType = "counter"
+			} else {
+				metricType = "gauge"
+			}
 
-		var value interface{}
-		switch fieldValue.Kind() {
-		case reflect.Int64:
-			value = fieldValue.Int()
-		case reflect.Float64:
-			value = fieldValue.Float()
-		default:
-			return fmt.Errorf("unsupported field type: %s", fieldValue.Kind())
-		}
+			var value interface{}
+			switch fieldValue.Kind() {
+			case reflect.Int64:
+				value = fieldValue.Int()
+			case reflect.Float64:
+				value = fieldValue.Float()
+			default:
+				return fmt.Errorf("unsupported field type: %s", fieldValue.Kind())
+			}
 
-		err := s.sendMetric(metricType, fieldName, value)
-		if err != nil {
-			return fmt.Errorf("failed to send metric %s: %w", fieldName, err)
+			err := s.sendMetric(metricType, fieldName, value)
+			if err != nil {
+				return fmt.Errorf("failed to send metric %s: %w", fieldName, err)
+			}
 		}
 	}
 	return nil

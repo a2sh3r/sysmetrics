@@ -63,5 +63,5 @@ func (h *Handler) UpdateMetric(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	_, _ = fmt.Fprintf(w, "Metric %v of %v type has written successfully", metricName, metricType)
+	_, _ = fmt.Fprintf(w, "Metric %v of %v type has written successfully: %v", metricName, metricType, metricValue)
 }
