@@ -47,13 +47,6 @@ func (s *Sender) sendMetric(metricType, metricName string, value interface{}) er
 		return fmt.Errorf("failed to send HTTP request: %w", err)
 	}
 
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			fmt.Println("error closing response body: ", err)
-		}
-	}(res.Body)
-
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		return fmt.Errorf("failed to read response body: %w", err)
