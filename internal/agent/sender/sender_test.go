@@ -3,6 +3,8 @@ package sender
 import (
 	"github.com/a2sh3r/sysmetrics/internal/agent/metrics"
 	"github.com/stretchr/testify/assert"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 )
 
@@ -90,6 +92,15 @@ func TestSender_SendMetrics(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusOK)
+			}))
+			defer srv.Close()
+
+			if tt.name != "Test #3 send metrics to invalid" {
+				tt.fields.serverAddress = srv.URL
+			}
+
 			s := &Sender{
 				serverAddress: tt.fields.serverAddress,
 			}
@@ -181,6 +192,15 @@ func TestSender_sendMetric(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusOK)
+			}))
+			defer srv.Close()
+
+			if tt.name != "Test #5 send to invalid address" {
+				tt.fields.serverAddress = srv.URL
+			}
+
 			s := &Sender{
 				serverAddress: tt.fields.serverAddress,
 			}
