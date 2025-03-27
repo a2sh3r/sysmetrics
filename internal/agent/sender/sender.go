@@ -36,16 +36,17 @@ func (s *Sender) sendMetric(metricType, metricName string, value interface{}) er
 	url := fmt.Sprintf("%s/update/%s/%s/%s", s.serverAddress, metricType, metricName, strValue)
 
 	res, err := http.Post(url, "text/plain", nil)
-	defer func() {
-		err := res.Body.Close()
-		if err != nil {
-			fmt.Printf("error while closing respose body")
-			return
-		}
-	}()
 	if err != nil {
 		return fmt.Errorf("failed to send HTTP request: %w", err)
 	}
+
+	defer func() {
+		if res != nil && res.Body != nil {
+			if err := res.Body.Close(); err != nil {
+				log.Printf("Error closing response body: %v", err)
+			}
+		}
+	}()
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
