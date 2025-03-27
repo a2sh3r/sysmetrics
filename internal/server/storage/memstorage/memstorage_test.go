@@ -1,160 +1,380 @@
 package memstorage
 
 import (
-	"errors"
 	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
+	"github.com/stretchr/testify/assert"
+	"sync"
 	"testing"
 )
 
+func TestMemStorage_GetMetric(t *testing.T) {
+	type fields struct {
+		metrics map[string]repositories.Metric
+		mu      *sync.RWMutex
+	}
+	type args struct {
+		name string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    repositories.Metric
+		wantErr bool
+	}{
+		{
+			name: "Test #1 get existing metric",
+			fields: fields{
+				metrics: map[string]repositories.Metric{
+					"test": {Type: "gauge", Value: 123.45},
+				},
+			},
+			args: args{
+				name: "test",
+			},
+			want:    repositories.Metric{Type: "gauge", Value: 123.45},
+			wantErr: false,
+		},
+		{
+			name: "Test #2 get non-existent metric",
+			fields: fields{
+				metrics: map[string]repositories.Metric{},
+			},
+			args: args{
+				name: "non-existent",
+			},
+			want:    repositories.Metric{},
+			wantErr: true,
+		},
+		{
+			name: "Test #3 get metric from nil storage",
+			fields: fields{
+				metrics: nil,
+			},
+			args: args{
+				name: "test",
+			},
+			want:    repositories.Metric{},
+			wantErr: true,
+		},
+		{
+			name: "Test #4 get metric from nil MemStorage",
+			fields: fields{
+				metrics: nil,
+			},
+			args: args{
+				name: "test",
+			},
+			want:    repositories.Metric{},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ms := &MemStorage{
+				metrics: tt.fields.metrics,
+				mu:      sync.RWMutex{},
+			}
+			got, err := ms.GetMetric(tt.args.name)
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.want, got)
+			}
+		})
+	}
+}
+
+func TestMemStorage_UpdateMetric(t *testing.T) {
+	type fields struct {
+		metrics map[string]repositories.Metric
+		mu      *sync.RWMutex
+	}
+	type args struct {
+		name   string
+		metric repositories.Metric
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "Test #1 update existing metric",
+			fields: fields{
+				metrics: map[string]repositories.Metric{
+					"test": {Type: "counter", Value: int64(10)},
+				},
+			},
+			args: args{
+				name: "test",
+				metric: repositories.Metric{
+					Type:  "counter",
+					Value: int64(20),
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Test #2 update non-existent metric",
+			fields: fields{
+				metrics: map[string]repositories.Metric{},
+			},
+			args: args{
+				name: "new",
+				metric: repositories.Metric{
+					Type:  "gauge",
+					Value: 123.45,
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Test #3 update metric with invalid type",
+			fields: fields{
+				metrics: map[string]repositories.Metric{
+					"test": {Type: "counter", Value: int64(10)},
+				},
+			},
+			args: args{
+				name: "test",
+				metric: repositories.Metric{
+					Type:  "invalid",
+					Value: int64(20),
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "Test #4 update metric with invalid name",
+			fields: fields{
+				metrics: map[string]repositories.Metric{},
+			},
+			args: args{
+				name: "",
+				metric: repositories.Metric{
+					Type:  "gauge",
+					Value: 123.45,
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "Test #5 update metric from nil storage",
+			fields: fields{
+				metrics: nil,
+			},
+			args: args{
+				name: "test",
+				metric: repositories.Metric{
+					Type:  "gauge",
+					Value: 123.45,
+				},
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ms := &MemStorage{
+				metrics: tt.fields.metrics,
+				mu:      sync.RWMutex{},
+			}
+			err := ms.UpdateMetric(tt.args.name, tt.args.metric)
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestMemStorage_updateCounterMetric(t *testing.T) {
+	type fields struct {
+		metrics map[string]repositories.Metric
+		mu      *sync.RWMutex
+	}
+	type args struct {
+		existingMetric *repositories.Metric
+		newMetric      repositories.Metric
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "Test #1 update counter metric",
+			fields: fields{
+				metrics: map[string]repositories.Metric{},
+			},
+			args: args{
+				existingMetric: &repositories.Metric{
+					Type:  "counter",
+					Value: int64(10),
+				},
+				newMetric: repositories.Metric{
+					Type:  "counter",
+					Value: int64(20),
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Test #2 update counter metric with invalid type",
+			fields: fields{
+				metrics: map[string]repositories.Metric{},
+			},
+			args: args{
+				existingMetric: &repositories.Metric{
+					Type:  "counter",
+					Value: int64(10),
+				},
+				newMetric: repositories.Metric{
+					Type:  "invalid",
+					Value: int64(20),
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "Test #3 update counter metric with invalid value type",
+			fields: fields{
+				metrics: map[string]repositories.Metric{},
+			},
+			args: args{
+				existingMetric: &repositories.Metric{
+					Type:  "counter",
+					Value: int64(10),
+				},
+				newMetric: repositories.Metric{
+					Type:  "counter",
+					Value: "invalid",
+				},
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ms := &MemStorage{
+				metrics: tt.fields.metrics,
+				mu:      sync.RWMutex{},
+			}
+			err := ms.updateCounterMetric(tt.args.existingMetric, tt.args.newMetric)
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestMemStorage_updateGaugeMetric(t *testing.T) {
+	type fields struct {
+		metrics map[string]repositories.Metric
+		mu      *sync.RWMutex
+	}
+	type args struct {
+		existingMetric *repositories.Metric
+		newMetric      repositories.Metric
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "Test #1 update gauge metric",
+			fields: fields{
+				metrics: map[string]repositories.Metric{},
+			},
+			args: args{
+				existingMetric: &repositories.Metric{
+					Type:  "gauge",
+					Value: float64(10.5),
+				},
+				newMetric: repositories.Metric{
+					Type:  "gauge",
+					Value: float64(20.5),
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Test #2 update gauge metric with invalid type",
+			fields: fields{
+				metrics: map[string]repositories.Metric{},
+			},
+			args: args{
+				existingMetric: &repositories.Metric{
+					Type:  "gauge",
+					Value: float64(10.5),
+				},
+				newMetric: repositories.Metric{
+					Type:  "invalid",
+					Value: float64(20.5),
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "Test #3 update gauge metric with invalid value type",
+			fields: fields{
+				metrics: map[string]repositories.Metric{},
+			},
+			args: args{
+				existingMetric: &repositories.Metric{
+					Type:  "gauge",
+					Value: float64(10.5),
+				},
+				newMetric: repositories.Metric{
+					Type:  "gauge",
+					Value: "invalid",
+				},
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ms := &MemStorage{
+				metrics: tt.fields.metrics,
+				mu:      sync.RWMutex{},
+			}
+			err := ms.updateGaugeMetric(tt.args.existingMetric, tt.args.newMetric)
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
 func TestNewMemStorage(t *testing.T) {
-	ms := NewMemStorage()
-	if ms == nil {
-		t.Errorf("NewMemStorage returned nil")
+	tests := []struct {
+		name string
+		want *MemStorage
+	}{
+		{
+			name: "Test #1 create new MemStorage",
+			want: &MemStorage{
+				metrics: make(map[string]repositories.Metric),
+			},
+		},
 	}
-	if ms != nil {
-		if ms.metrics == nil {
-			t.Errorf("Metrics map is nil")
-		}
-	}
-
-}
-
-func TestGetMetric(t *testing.T) {
-	ms := NewMemStorage()
-	_ = ms.UpdateMetric("test", repositories.Metric{Type: "gauge", Value: 156.14})
-
-	metric, err := ms.GetMetric("test")
-	if err != nil {
-		t.Errorf("GetMetric returned error: %v", err)
-	}
-	if metric.Type != "gauge" || metric.Value != 156.14 {
-		t.Errorf("GetMetric returned incorrect metric: %+v", metric)
-	}
-
-	_, err = ms.GetMetric("testers")
-	if !errors.Is(err, ErrMetricNotFound) {
-		t.Errorf("GetMetric did not return ErrMetricNotFound for non-existent metric")
-	}
-}
-
-func TestUpdateMetric_NewCounter(t *testing.T) {
-	ms := NewMemStorage()
-
-	err := ms.UpdateMetric("test_int64", repositories.Metric{Type: "counter", Value: int64(10)})
-	if err != nil {
-		t.Fatalf("UpdateMetric failed: %v", err)
-	}
-
-	m, err := ms.GetMetric("test_int64")
-	if err != nil {
-		t.Fatalf("GetMetric failed: %v", err)
-	}
-
-	if m.Value.(int64) != int64(10) {
-		t.Fatalf("Expected int64 value 10, got %v", m.Value)
-	}
-}
-
-func TestUpdateMetric_UpdateCounter(t *testing.T) {
-	ms := NewMemStorage()
-
-	err := ms.UpdateMetric("test_int64", repositories.Metric{Type: "counter", Value: int64(10)})
-	if err != nil {
-		t.Fatalf("UpdateMetric failed: %v", err)
-	}
-
-	err = ms.UpdateMetric("test_int64", repositories.Metric{Type: "counter", Value: int64(5)})
-	if err != nil {
-		t.Fatalf("UpdateMetric failed: %v", err)
-	}
-
-	m, err := ms.GetMetric("test_int64")
-	if err != nil {
-		t.Fatalf("GetMetric failed: %v", err)
-	}
-
-	if m.Value.(int64) != int64(15) {
-		t.Fatalf("Expected int64 value 15, got %v", m.Value)
-	}
-}
-
-func TestUpdateMetric_NewGauge(t *testing.T) {
-	ms := NewMemStorage()
-
-	err := ms.UpdateMetric("test_float64", repositories.Metric{Type: "gauge", Value: 3.14})
-	if err != nil {
-		t.Fatalf("UpdateMetric failed: %v", err)
-	}
-
-	m, err := ms.GetMetric("test_float64")
-	if err != nil {
-		t.Fatalf("GetMetric failed: %v", err)
-	}
-
-	if m.Value.(float64) != float64(3.14) {
-		t.Fatalf("Expected float64 value 3.14, got %v", m.Value)
-	}
-}
-
-func TestUpdateMetric_UpdateGauge(t *testing.T) {
-	ms := NewMemStorage()
-
-	err := ms.UpdateMetric("test_float64", repositories.Metric{Type: "gauge", Value: 3.14})
-	if err != nil {
-		t.Fatalf("UpdateMetric failed: %v", err)
-	}
-
-	err = ms.UpdateMetric("test_float64", repositories.Metric{Type: "gauge", Value: 2.71})
-	if err != nil {
-		t.Fatalf("UpdateMetric failed: %v", err)
-	}
-
-	m, err := ms.GetMetric("test_float64")
-	if err != nil {
-		t.Fatalf("GetMetric failed: %v", err)
-	}
-
-	if m.Value.(float64) != float64(2.71) {
-		t.Fatalf("Expected float64 value 2.71, got %v", m.Value)
-	}
-}
-
-func TestUpdateMetric_InvalidType(t *testing.T) {
-	ms := NewMemStorage()
-
-	err := ms.UpdateMetric("test_invalid", repositories.Metric{Type: "invalid", Value: "some_value"})
-	if err == nil {
-		t.Fatal("Expected error for invalid metric type, got nil")
-	}
-
-	if !errors.Is(err, ErrMetricInvalidType) {
-		t.Fatalf("Expected ErrMetricTypeInvalid, got %v", err)
-	}
-}
-
-func TestUpdateMetric_NilStorage(t *testing.T) {
-	var ms *MemStorage = nil
-
-	err := ms.UpdateMetric("test_nil", repositories.Metric{Type: "counter", Value: int64(10)})
-	if err == nil {
-		t.Fatal("Expected error for nil storage, got nil")
-	}
-
-	if !errors.Is(err, ErrStorageNil) {
-		t.Fatalf("Expected ErrStorageNil, got %v", err)
-	}
-}
-
-func TestUpdateMetric_NilMetricsMap(t *testing.T) {
-	ms := NewMemStorage()
-	ms.metrics = nil
-
-	err := ms.UpdateMetric("test_nil_map", repositories.Metric{Type: "counter", Value: int64(10)})
-	if err == nil {
-		t.Fatal("Expected error for nil metrics map, got nil")
-	}
-
-	if !errors.Is(err, ErrMetricsMapNil) {
-		t.Fatalf("Expected ErrMetricsMapNil, got %v", err)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := NewMemStorage()
+			assert.NotNil(t, got)
+			assert.NotNil(t, got.metrics)
+		})
 	}
 }

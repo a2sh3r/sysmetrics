@@ -93,6 +93,9 @@ func (ms *MemStorage) UpdateMetric(name string, metric repositories.Metric) erro
 }
 
 func (ms *MemStorage) updateCounterMetric(existingMetric *repositories.Metric, newMetric repositories.Metric) error {
+	if newMetric.Type != "counter" {
+		return ErrMetricInvalidType
+	}
 	newValue, ok := newMetric.Value.(int64)
 	if !ok {
 		return ErrMetricInvalidType
@@ -113,6 +116,9 @@ func (ms *MemStorage) updateCounterMetric(existingMetric *repositories.Metric, n
 }
 
 func (ms *MemStorage) updateGaugeMetric(existingMetric *repositories.Metric, newMetric repositories.Metric) error {
+	if newMetric.Type != "gauge" {
+		return ErrMetricInvalidType
+	}
 	newValue, ok := newMetric.Value.(float64)
 	if !ok {
 		return fmt.Errorf("6, %T, %v", newMetric.Value, ok)

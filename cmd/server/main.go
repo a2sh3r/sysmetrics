@@ -5,10 +5,13 @@ import (
 	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
 	"github.com/a2sh3r/sysmetrics/internal/server/services/metric"
 	"github.com/a2sh3r/sysmetrics/internal/server/storage/memstorage"
+	"log"
 	"net/http"
 )
 
 func main() {
+	log.Println("Server is staring")
+
 	memStorage := memstorage.NewMemStorage()
 
 	metricRepo := repositories.NewMetricRepo(memStorage)

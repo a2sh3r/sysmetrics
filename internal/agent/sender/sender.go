@@ -25,6 +25,9 @@ func (s *Sender) sendMetric(metricType, metricName string, value interface{}) er
 	case int64:
 		strValue = fmt.Sprintf("%d", v)
 	case float64:
+		if metricType == "counter" {
+			return fmt.Errorf("invalid value type for metric type %v", metricType)
+		}
 		strValue = fmt.Sprintf("%f", v)
 	default:
 		return fmt.Errorf("unsupported metric type: %T", v)
@@ -55,7 +58,18 @@ func (s *Sender) sendMetric(metricType, metricName string, value interface{}) er
 }
 
 func (s *Sender) SendMetrics(metricsBatch []*metrics.Metrics) error {
+	if metricsBatch == nil {
+		return fmt.Errorf("metricsBatch is nil")
+	}
+
+	if len(metricsBatch) == 0 {
+		return fmt.Errorf("metricsBatch is empty")
+	}
+
 	for _, m := range metricsBatch {
+		if m == nil {
+			return fmt.Errorf("metric is nil")
+		}
 		v := reflect.ValueOf(m).Elem()
 		t := v.Type()
 
