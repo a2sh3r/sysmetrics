@@ -103,12 +103,12 @@ func (h *Handler) GetMetric(w http.ResponseWriter, r *http.Request) {
 
 	responseMetric, err := h.service.GetMetric(metricName)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Failed to get metric: %s", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Failed to get metric: %s", err), http.StatusNotFound)
 		return
 	}
 
 	if responseMetric.Type != metricType {
-		http.Error(w, fmt.Sprint("Got metric, but its type differs from the requested one"), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Got metric, but its type differs from the requested one: %s", metricName), http.StatusBadRequest)
 		return
 	}
 
@@ -119,12 +119,12 @@ func (h *Handler) GetMetric(w http.ResponseWriter, r *http.Request) {
 
 	switch v := responseMetric.Value.(type) {
 	case int64:
-		if _, err := io.WriteString(w, fmt.Sprintf("%s: %s %d\n", metricName, responseMetric.Type, v)); err != nil {
+		if _, err := io.WriteString(w, fmt.Sprintf("%d\n", v)); err != nil {
 			http.Error(w, fmt.Sprintf("Failed to write body: %s\n", err), http.StatusInternalServerError)
 			return
 		}
 	case float64:
-		if _, err := io.WriteString(w, fmt.Sprintf("%s: %s %g\n", metricName, responseMetric.Type, v)); err != nil {
+		if _, err := io.WriteString(w, fmt.Sprintf("%g\n", v)); err != nil {
 			http.Error(w, fmt.Sprintf("Failed to write body: %s\n", err), http.StatusInternalServerError)
 			return
 		}
@@ -152,13 +152,13 @@ func (h *Handler) GetMetrics(w http.ResponseWriter, r *http.Request) {
 	for metricName, responseMetric := range responseMetrics {
 		switch v := responseMetric.Value.(type) {
 		case int64:
-			_, err := fmt.Fprintf(&metricsBuffer, "%s: %s %d\n", metricName, responseMetric.Type, v)
+			_, err := fmt.Fprintf(&metricsBuffer, "%s %d\n", metricName, v)
 			if err != nil {
 				http.Error(w, fmt.Sprintf("Failed to write body: %s", err), http.StatusInternalServerError)
 				return
 			}
 		case float64:
-			_, err := fmt.Fprintf(&metricsBuffer, "%s: %s %g\n", metricName, responseMetric.Type, v)
+			_, err := fmt.Fprintf(&metricsBuffer, "%s %g\n", metricName, v)
 			if err != nil {
 				http.Error(w, fmt.Sprintf("Failed to write body: %s", err), http.StatusInternalServerError)
 				return

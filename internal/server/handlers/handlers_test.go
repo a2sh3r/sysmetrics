@@ -140,7 +140,7 @@ func TestHandler_UpdateMetric(t *testing.T) {
 			defer func(Body io.ReadCloser) {
 				err := Body.Close()
 				if err != nil {
-
+					return
 				}
 			}(res.Body)
 
@@ -192,7 +192,7 @@ func TestHandler_GetMetric(t *testing.T) {
 			},
 			want: want{
 				code:        http.StatusOK,
-				response:    "test_gauge: gauge 123.123\n",
+				response:    "123.123\n",
 				contentType: "text/plain; charset=utf-8",
 			},
 		},
@@ -214,29 +214,7 @@ func TestHandler_GetMetric(t *testing.T) {
 			},
 			want: want{
 				code:        http.StatusOK,
-				response:    "test_counter: counter 123\n",
-				contentType: "text/plain; charset=utf-8",
-			},
-		},
-		{
-			name: "Test #2 get counter metric",
-			fields: fields{
-				service: metric.NewService(&mockRepo{
-					metrics: map[string]repositories.Metric{
-						"test_counter": {
-							Type:  "counter",
-							Value: int64(123),
-						},
-					},
-				}),
-			},
-			args: args{
-				method: http.MethodGet,
-				url:    "/value/counter/test_counter",
-			},
-			want: want{
-				code:        http.StatusOK,
-				response:    "test_counter: counter 123\n",
+				response:    "123\n",
 				contentType: "text/plain; charset=utf-8",
 			},
 		},
@@ -294,7 +272,7 @@ func TestHandler_GetMetric(t *testing.T) {
 				url:    "/value/gauge/test_counter",
 			},
 			want: want{
-				code:        http.StatusInternalServerError,
+				code:        http.StatusBadRequest,
 				response:    "Failed to get metric: metric test_counter not found\n",
 				contentType: "text/plain; charset=utf-8",
 			},
@@ -396,8 +374,8 @@ func TestHandler_GetMetrics(t *testing.T) {
 			want: want{
 				code: http.StatusOK,
 				response: []string{
-					"test_gauge: gauge 123.123",
-					"test_counter: counter 123",
+					"test_gauge 123.123",
+					"test_counter 123",
 				},
 				contentType: "text/plain; charset=utf-8",
 			},
