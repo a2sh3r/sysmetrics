@@ -27,7 +27,7 @@ func (na *NetAddress) Set(flagValue string) error {
 		if na.Port, err = strconv.Atoi(address[1]); err != nil {
 			return errors.New("cant parse port")
 		}
-	} else {
+	} else if len(address) == 1 {
 		if na.Port, err = strconv.Atoi(address[0]); err != nil {
 			return errors.New("cant parse port")
 		}
@@ -42,5 +42,7 @@ func ParseFlags(cfg *config.ServerConfig) {
 	flag.Var(addr, "a", "Net address host:port")
 	flag.Parse()
 
-	cfg.Address = addr.String()
+	if addr.Port != 0 {
+		cfg.Address = addr.String()
+	}
 }

@@ -28,7 +28,7 @@ func (na *NetAddress) Set(flagValue string) error {
 		if na.Port, err = strconv.Atoi(address[1]); err != nil {
 			return errors.New("cant parse port")
 		}
-	} else {
+	} else if len(address) == 1 {
 		if na.Port, err = strconv.Atoi(address[0]); err != nil {
 			return errors.New("cant parse port")
 		}
@@ -51,7 +51,15 @@ func ParseFlags(cfg *config.AgentConfig) {
 
 	flag.Parse()
 
-	cfg.Address = "http://" + addr.String()
-	cfg.PollInterval = time.Duration(pollInterval) * time.Second
-	cfg.ReportInterval = time.Duration(reportInterval) * time.Second
+	if addr.Port != 0 {
+		cfg.Address = "http://" + addr.String()
+	}
+
+	if pollInterval > 0 {
+		cfg.PollInterval = time.Duration(pollInterval) * time.Second
+	}
+
+	if reportInterval > 0 {
+		cfg.ReportInterval = time.Duration(reportInterval) * time.Second
+	}
 }
