@@ -1,13 +1,15 @@
 package repositories
 
 type Storage interface {
-	UpdateMetric(name string, metric Metric) error
-	GetMetric(name string) (Metric, error)
+	UpdateMetric(metricName string, metric Metric) error
+	GetMetric(metricName string) (Metric, error)
+	GetMetrics() (map[string]Metric, error)
 }
 
 type MetricRepository interface {
-	SaveMetric(name string, value interface{}, metricType string) error
-	GetMetric(name string) (Metric, error)
+	SaveMetric(metricName string, metricValue interface{}, metricType string) error
+	GetMetric(metricName string) (Metric, error)
+	GetMetrics() (map[string]Metric, error)
 }
 
 type Metric struct {

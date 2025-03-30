@@ -20,9 +20,7 @@ func main() {
 
 	handler := handlers.NewHandler(metricService)
 
-	http.HandleFunc("/update/", handler.UpdateMetric)
-
-	if err := http.ListenAndServe(":8080", nil); err != nil {
+	if err := http.ListenAndServe(":8080", handlers.NewRouter(handler)); err != nil {
 		panic(err)
 	}
 }

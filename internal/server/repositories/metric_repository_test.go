@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"errors"
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -53,6 +54,60 @@ func TestMetricRepo_GetMetric(t *testing.T) {
 				storage: tt.fields.storage,
 			}
 			got, err := r.GetMetric(tt.args.name)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.want, got)
+			}
+		})
+	}
+}
+
+func TestMetricRepo_GetMetrics(t *testing.T) {
+	type fields struct {
+		storage Storage
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		want    map[string]Metric
+		wantErr bool
+	}{
+		{
+			name: "Test #1 get metrics",
+			fields: fields{
+				storage: &MockStorage{
+					metrics: map[string]Metric{
+						"test":  {Type: "gauge", Value: 123.45},
+						"test2": {Type: "counter", Value: 123},
+					},
+				},
+			},
+			want: map[string]Metric{
+				"test":  {Type: "gauge", Value: 123.45},
+				"test2": {Type: "counter", Value: 123},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Test #2 get nil map",
+			fields: fields{
+				storage: &MockStorage{
+					metrics: nil,
+				},
+			},
+			want:    nil,
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := &MetricRepo{
+				storage: tt.fields.storage,
+			}
+			got, err := r.GetMetrics()
 
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -173,4 +228,15 @@ func (m *MockStorage) GetMetric(name string) (Metric, error) {
 		return Metric{}, fmt.Errorf("mock update error")
 	}
 	return metric, nil
+}
+
+func (m *MockStorage) GetMetrics() (map[string]Metric, error) {
+	if m == nil {
+		return map[string]Metric{}, errors.New("nil Metric")
+	}
+
+	if m.metrics == nil {
+		return map[string]Metric{}, errors.New("nil map")
+	}
+	return m.metrics, nil
 }

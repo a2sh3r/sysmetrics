@@ -139,6 +139,117 @@ func TestService_UpdateGaugeMetric(t *testing.T) {
 	}
 }
 
+func TestService_GetMetrics(t *testing.T) {
+	type fields struct {
+		repo repositories.MetricRepository
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		want    map[string]repositories.Metric
+		wantErr bool
+	}{
+		{
+			name: "Test #1 get metrics",
+			fields: fields{
+				repo: &mockRepo{
+					metrics: map[string]repositories.Metric{
+						"test_gauge": {
+							Type:  "gauge",
+							Value: 123.45,
+						},
+						"test_counter": {
+							Type:  "counter",
+							Value: int64(123),
+						},
+					},
+				},
+			},
+			want: map[string]repositories.Metric{
+				"test_gauge": {
+					Type:  "gauge",
+					Value: 123.45,
+				},
+				"test_counter": {
+					Type:  "counter",
+					Value: int64(123),
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := &Service{
+				repo: tt.fields.repo,
+			}
+			got, err := s.GetMetrics()
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.want, got)
+			}
+		})
+	}
+}
+
+func TestService_GetMetric(t *testing.T) {
+	type fields struct {
+		repo repositories.MetricRepository
+	}
+	type args struct {
+		name string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    repositories.Metric
+		wantErr bool
+	}{
+		{
+			name: "Test #1 get metrics",
+			fields: fields{
+				repo: &mockRepo{
+					metrics: map[string]repositories.Metric{
+						"test_gauge": {
+							Type:  "gauge",
+							Value: 123.45,
+						},
+						"test_counter": {
+							Type:  "counter",
+							Value: int64(123),
+						},
+					},
+				},
+			},
+			args: args{
+				name: "test_gauge",
+			},
+			want: repositories.Metric{
+				Type:  "gauge",
+				Value: 123.45,
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := &Service{
+				repo: tt.fields.repo,
+			}
+			got, err := s.GetMetric(tt.args.name)
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.want, got)
+			}
+		})
+	}
+}
+
 type mockRepo struct {
 	metrics     map[string]repositories.Metric
 	errOnUpdate bool
@@ -154,6 +265,13 @@ func (m *mockRepo) GetMetric(name string) (repositories.Metric, error) {
 		return repositories.Metric{}, fmt.Errorf("metric %s not found", name)
 	}
 	return metric, nil
+}
+
+func (m *mockRepo) GetMetrics() (map[string]repositories.Metric, error) {
+	if m.errOnGet {
+		return map[string]repositories.Metric{}, fmt.Errorf("mock get error")
+	}
+	return m.metrics, nil
 }
 
 func (m *mockRepo) SaveMetric(name string, value interface{}, metricType string) error {

@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -42,7 +43,7 @@ func TestHandler_UpdateMetric(t *testing.T) {
 			},
 			want: want{
 				code:        http.StatusOK,
-				response:    "Metric test of gauge type has written successfully: 123.45\n",
+				response:    "Metric test is updated successfully with value 123.45",
 				contentType: "text/plain; charset=utf-8",
 			},
 		},
@@ -57,7 +58,7 @@ func TestHandler_UpdateMetric(t *testing.T) {
 			},
 			want: want{
 				code:        http.StatusOK,
-				response:    "Metric test of counter type has written successfully: 123\n",
+				response:    "Metric test is updated successfully with value 123",
 				contentType: "text/plain; charset=utf-8",
 			},
 		},
@@ -102,7 +103,7 @@ func TestHandler_UpdateMetric(t *testing.T) {
 			},
 			want: want{
 				code:        http.StatusBadRequest,
-				response:    "Failed to update metric: invalid metric type\n",
+				response:    "Failed to update metric: invalid metric type: invalid\n",
 				contentType: "text/plain; charset=utf-8",
 			},
 		},
@@ -127,20 +128,338 @@ func TestHandler_UpdateMetric(t *testing.T) {
 			h := &Handler{
 				service: tt.fields.service,
 			}
-			req := httptest.NewRequest(tt.args.method, tt.args.url, nil)
-			w := httptest.NewRecorder()
-			h.UpdateMetric(w, req)
-			res := w.Result()
+
+			ts := httptest.NewServer(NewRouter(h))
+			defer ts.Close()
+
+			req, err := http.NewRequest(tt.args.method, ts.URL+tt.args.url, nil)
+			require.NoError(t, err)
+
+			res, err := ts.Client().Do(req)
+			require.NoError(t, err)
+			defer func(Body io.ReadCloser) {
+				err := Body.Close()
+				if err != nil {
+
+				}
+			}(res.Body)
 
 			assert.Equal(t, tt.want.code, res.StatusCode)
-			defer func() {
-				assert.NoError(t, res.Body.Close())
-			}()
-			resBody, err := io.ReadAll(res.Body)
 
+			resBody, err := io.ReadAll(res.Body)
 			require.NoError(t, err)
+
 			assert.Equal(t, tt.want.contentType, res.Header.Get("Content-Type"))
 			assert.Equal(t, tt.want.response, string(resBody))
+		})
+	}
+}
+
+func TestHandler_GetMetric(t *testing.T) {
+	type fields struct {
+		service *metric.Service
+	}
+	type args struct {
+		method string
+		url    string
+	}
+	type want struct {
+		code        int
+		response    string
+		contentType string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   want
+	}{
+		{
+			name: "Test #1 get gauge metric",
+			fields: fields{
+				service: metric.NewService(&mockRepo{
+					metrics: map[string]repositories.Metric{
+						"test_gauge": {
+							Type:  "gauge",
+							Value: 123.123,
+						},
+					},
+				}),
+			},
+			args: args{
+				method: http.MethodGet,
+				url:    "/value/gauge/test_gauge",
+			},
+			want: want{
+				code:        http.StatusOK,
+				response:    "test_gauge: gauge 123.123\n",
+				contentType: "text/plain; charset=utf-8",
+			},
+		},
+		{
+			name: "Test #2 get counter metric",
+			fields: fields{
+				service: metric.NewService(&mockRepo{
+					metrics: map[string]repositories.Metric{
+						"test_counter": {
+							Type:  "counter",
+							Value: int64(123),
+						},
+					},
+				}),
+			},
+			args: args{
+				method: http.MethodGet,
+				url:    "/value/counter/test_counter",
+			},
+			want: want{
+				code:        http.StatusOK,
+				response:    "test_counter: counter 123\n",
+				contentType: "text/plain; charset=utf-8",
+			},
+		},
+		{
+			name: "Test #2 get counter metric",
+			fields: fields{
+				service: metric.NewService(&mockRepo{
+					metrics: map[string]repositories.Metric{
+						"test_counter": {
+							Type:  "counter",
+							Value: int64(123),
+						},
+					},
+				}),
+			},
+			args: args{
+				method: http.MethodGet,
+				url:    "/value/counter/test_counter",
+			},
+			want: want{
+				code:        http.StatusOK,
+				response:    "test_counter: counter 123\n",
+				contentType: "text/plain; charset=utf-8",
+			},
+		},
+		{
+			name: "Test #3 get invalid type metric",
+			fields: fields{
+				service: metric.NewService(&mockRepo{
+					metrics: map[string]repositories.Metric{
+						"test_counter": {
+							Type:  "counter",
+							Value: int64(123),
+						},
+					},
+				}),
+			},
+			args: args{
+				method: http.MethodGet,
+				url:    "/value/gauge/test_counter",
+			},
+			want: want{
+				code:        http.StatusBadRequest,
+				response:    "Got metric, but its type differs from the requested one\n",
+				contentType: "text/plain; charset=utf-8",
+			},
+		},
+		{
+			name: "Test #3 get invalid type metric",
+			fields: fields{
+				service: metric.NewService(&mockRepo{
+					metrics: map[string]repositories.Metric{
+						"test_counter": {
+							Type:  "counter",
+							Value: int64(123),
+						},
+					},
+				}),
+			},
+			args: args{
+				method: http.MethodGet,
+				url:    "/value/gauge/test_counter",
+			},
+			want: want{
+				code:        http.StatusBadRequest,
+				response:    "Got metric, but its type differs from the requested one\n",
+				contentType: "text/plain; charset=utf-8",
+			},
+		},
+		{
+			name: "Test #4 failed to get metric",
+			fields: fields{
+				service: metric.NewService(&mockRepo{}),
+			},
+			args: args{
+				method: http.MethodGet,
+				url:    "/value/gauge/test_counter",
+			},
+			want: want{
+				code:        http.StatusInternalServerError,
+				response:    "Failed to get metric: metric test_counter not found\n",
+				contentType: "text/plain; charset=utf-8",
+			},
+		},
+		{
+			name: "Test #5 metric is nil",
+			fields: fields{
+				service: metric.NewService(&mockRepo{
+					metrics: map[string]repositories.Metric{
+						"test_nil": {
+							Type:  "gauge",
+							Value: nil,
+						},
+					},
+				}),
+			},
+			args: args{
+				method: http.MethodGet,
+				url:    "/value/gauge/test_nil",
+			},
+			want: want{
+				code:        http.StatusInternalServerError,
+				response:    "Metric value is nil\n",
+				contentType: "text/plain; charset=utf-8",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			h := &Handler{
+				service: tt.fields.service,
+			}
+
+			ts := httptest.NewServer(NewRouter(h))
+			defer ts.Close()
+
+			req, err := http.NewRequest(tt.args.method, ts.URL+tt.args.url, nil)
+			require.NoError(t, err)
+
+			res, err := ts.Client().Do(req)
+			require.NoError(t, err)
+			defer func(Body io.ReadCloser) {
+				err := Body.Close()
+				if err != nil {
+					return
+				}
+			}(res.Body)
+
+			assert.Equal(t, tt.want.code, res.StatusCode)
+
+			resBody, err := io.ReadAll(res.Body)
+			require.NoError(t, err)
+
+			assert.Equal(t, tt.want.contentType, res.Header.Get("Content-Type"))
+			assert.Equal(t, tt.want.response, string(resBody))
+		})
+	}
+}
+
+func TestHandler_GetMetrics(t *testing.T) {
+	type fields struct {
+		service *metric.Service
+	}
+	type args struct {
+		method string
+		url    string
+	}
+	type want struct {
+		code        int
+		response    []string
+		contentType string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   want
+	}{
+		{
+			name: "Test #1 get gauge metric",
+			fields: fields{
+				service: metric.NewService(&mockRepo{
+					metrics: map[string]repositories.Metric{
+						"test_gauge": {
+							Type:  "gauge",
+							Value: 123.123,
+						},
+						"test_counter": {
+							Type:  "counter",
+							Value: int64(123),
+						},
+					},
+				}),
+			},
+			args: args{
+				method: http.MethodGet,
+				url:    "/",
+			},
+			want: want{
+				code: http.StatusOK,
+				response: []string{
+					"test_gauge: gauge 123.123",
+					"test_counter: counter 123",
+				},
+				contentType: "text/plain; charset=utf-8",
+			},
+		},
+		{
+			name: "Test #2 get invalid metric",
+			fields: fields{
+				service: metric.NewService(&mockRepo{
+					metrics: map[string]repositories.Metric{
+						"test_invalid": {
+							Type:  "gauge",
+							Value: "String",
+						},
+					},
+				}),
+			},
+			args: args{
+				method: http.MethodGet,
+				url:    "/",
+			},
+			want: want{
+				code: http.StatusInternalServerError,
+				response: []string{
+					"Unsupported metric value type",
+				},
+				contentType: "text/plain; charset=utf-8",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			h := &Handler{
+				service: tt.fields.service,
+			}
+
+			ts := httptest.NewServer(NewRouter(h))
+			defer ts.Close()
+
+			req, err := http.NewRequest(tt.args.method, ts.URL+tt.args.url, nil)
+			require.NoError(t, err)
+
+			res, err := ts.Client().Do(req)
+			require.NoError(t, err)
+			defer func(Body io.ReadCloser) {
+				err := Body.Close()
+				if err != nil {
+					return
+				}
+			}(res.Body)
+
+			assert.Equal(t, tt.want.code, res.StatusCode)
+
+			resBody, err := io.ReadAll(res.Body)
+			require.NoError(t, err)
+
+			actualLines := strings.Split(strings.TrimSpace(string(resBody)), "\n")
+
+			assert.Equal(t, tt.want.contentType, res.Header.Get("Content-Type"))
+			for _, expectedLine := range tt.want.response {
+				assert.Contains(t, actualLines, expectedLine)
+			}
+			assert.Equal(t, len(tt.want.response), len(actualLines))
 		})
 	}
 }
@@ -188,6 +507,13 @@ func (m *mockRepo) GetMetric(name string) (repositories.Metric, error) {
 		return repositories.Metric{}, fmt.Errorf("metric %s not found", name)
 	}
 	return getMetric, nil
+}
+
+func (m *mockRepo) GetMetrics() (map[string]repositories.Metric, error) {
+	if m.errOnGet {
+		return map[string]repositories.Metric{}, fmt.Errorf("mock get error")
+	}
+	return m.metrics, nil
 }
 
 func (m *mockRepo) SaveMetric(name string, value interface{}, metricType string) error {

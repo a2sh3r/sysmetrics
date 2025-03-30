@@ -86,6 +86,56 @@ func TestMemStorage_GetMetric(t *testing.T) {
 	}
 }
 
+func TestMemStorage_GetMetrics(t *testing.T) {
+	type fields struct {
+		metrics map[string]repositories.Metric
+		mu      *sync.RWMutex
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		want    map[string]repositories.Metric
+		wantErr bool
+	}{
+		{
+			name: "Test #1 get existing metric",
+			fields: fields{
+				metrics: map[string]repositories.Metric{
+					"test_gauge":   {Type: "gauge", Value: 123.45},
+					"test_counter": {Type: "counter", Value: int64(123)},
+				},
+			},
+
+			want: map[string]repositories.Metric{
+				"test_gauge": {
+					Type:  "gauge",
+					Value: 123.45,
+				},
+				"test_counter": {
+					Type:  "counter",
+					Value: int64(123),
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ms := &MemStorage{
+				metrics: tt.fields.metrics,
+				mu:      sync.RWMutex{},
+			}
+			got, err := ms.GetMetrics()
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.want, got)
+			}
+		})
+	}
+}
+
 func TestMemStorage_UpdateMetric(t *testing.T) {
 	type fields struct {
 		metrics map[string]repositories.Metric

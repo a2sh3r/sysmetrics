@@ -1,8 +1,11 @@
 package handlers
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/a2sh3r/sysmetrics/internal/server/services/metric"
+	"github.com/go-chi/chi/v5"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -11,6 +14,24 @@ import (
 
 type Handler struct {
 	service *metric.Service
+}
+
+func NewRouter(handler *Handler) chi.Router {
+	r := chi.NewRouter()
+	r.MethodNotAllowed(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	})
+	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "Invalid URL format", http.StatusNotFound)
+	})
+
+	r.Route("/", func(r chi.Router) {
+		r.Get("/", handler.GetMetrics)
+		r.Post("/update/{metricType}/{metricName}/{metricValue}", handler.UpdateMetric)
+		r.Get("/value/{metricType}/{metricName}", handler.GetMetric)
+	})
+
+	return r
 }
 
 func NewHandler(service *metric.Service) *Handler {
@@ -32,9 +53,9 @@ func (h *Handler) UpdateMetric(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	metricType := parts[2]
-	metricName := parts[3]
-	metricValue := parts[4]
+	metricType := chi.URLParam(r, "metricType")
+	metricName := chi.URLParam(r, "metricName")
+	metricValue := chi.URLParam(r, "metricValue")
 
 	switch metricType {
 	case "gauge":
@@ -58,10 +79,100 @@ func (h *Handler) UpdateMetric(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	default:
-		http.Error(w, "Failed to update metric: invalid metric type", http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Failed to update metric: invalid metric type: %v", metricType), http.StatusBadRequest)
+		return
+	}
+
+	if _, err := io.WriteString(w, fmt.Sprintf("Metric %v is updated successfully with value %v", metricName, metricValue)); err != nil {
+		http.Error(w, fmt.Sprintf("Failed to write body: %s", err), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (h *Handler) GetMetric(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.Header().Set("Date", time.Now().UTC().Format("Mon, 02 Jan 2006 15:04:05 GMT"))
+
+	metricType := chi.URLParam(r, "metricType")
+	metricName := chi.URLParam(r, "metricName")
+
+	responseMetric, err := h.service.GetMetric(metricName)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to get metric: %s", err), http.StatusInternalServerError)
+		return
+	}
+
+	if responseMetric.Type != metricType {
+		http.Error(w, fmt.Sprint("Got metric, but its type differs from the requested one"), http.StatusBadRequest)
+		return
+	}
+
+	if responseMetric.Value == nil {
+		http.Error(w, "Metric value is nil", http.StatusInternalServerError)
+		return
+	}
+
+	switch v := responseMetric.Value.(type) {
+	case int64:
+		if _, err := io.WriteString(w, fmt.Sprintf("%s: %s %d\n", metricName, responseMetric.Type, v)); err != nil {
+			http.Error(w, fmt.Sprintf("Failed to write body: %s\n", err), http.StatusInternalServerError)
+			return
+		}
+	case float64:
+		if _, err := io.WriteString(w, fmt.Sprintf("%s: %s %g\n", metricName, responseMetric.Type, v)); err != nil {
+			http.Error(w, fmt.Sprintf("Failed to write body: %s\n", err), http.StatusInternalServerError)
+			return
+		}
+	default:
+		http.Error(w, "Unsupported metric value type", http.StatusInternalServerError)
+		return
+	}
+}
+
+func (h *Handler) GetMetrics(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.Header().Set("Date", time.Now().UTC().Format("Mon, 02 Jan 2006 15:04:05 GMT"))
+
+	responseMetrics, err := h.service.GetMetrics()
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to get metrics: %s", err), http.StatusInternalServerError)
+	}
+
+	var metricsBuffer bytes.Buffer
+	for metricName, responseMetric := range responseMetrics {
+		switch v := responseMetric.Value.(type) {
+		case int64:
+			_, err := fmt.Fprintf(&metricsBuffer, "%s: %s %d\n", metricName, responseMetric.Type, v)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Failed to write body: %s", err), http.StatusInternalServerError)
+				return
+			}
+		case float64:
+			_, err := fmt.Fprintf(&metricsBuffer, "%s: %s %g\n", metricName, responseMetric.Type, v)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Failed to write body: %s", err), http.StatusInternalServerError)
+				return
+			}
+		default:
+			http.Error(w, "Unsupported metric value type", http.StatusInternalServerError)
+			return
+		}
+	}
+
+	if _, err := io.Copy(w, &metricsBuffer); err != nil {
+		http.Error(w, fmt.Sprintf("Failed to write body: %s", err), http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	_, _ = fmt.Fprintf(w, "Metric %v of %v type has written successfully: %v\n", metricName, metricType, metricValue)
 }
