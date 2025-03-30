@@ -7,7 +7,6 @@ import (
 	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
 	"github.com/a2sh3r/sysmetrics/internal/server/services/metric"
 	"github.com/a2sh3r/sysmetrics/internal/server/storage/memstorage"
-	"log"
 	"net/http"
 )
 
@@ -24,7 +23,7 @@ func main() {
 
 	handler := handlers.NewHandler(metricService)
 
-	log.Printf("Server is staring on address: %s", cfg.Address)
+	//log.Printf("Server is staring on address: %s", cfg.Address)
 
 	if err := http.ListenAndServe(cfg.Address, handlers.NewRouter(handler)); err != nil {
 		panic(err)
