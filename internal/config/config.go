@@ -24,6 +24,6 @@ func NewAgentConfig() *AgentConfig {
 
 func NewServerConfig() *ServerConfig {
 	return &ServerConfig{
-		Address: "localhost:8080",
+		Address: ":8080",
 	}
 }
