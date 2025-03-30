@@ -79,8 +79,7 @@ func ParseFlags(cfg *config.AgentConfig) {
 	}
 
 	if envAddress := os.Getenv("ADDRESS"); envAddress != "" {
-		fmt.Println(envAddress)
-		cfg.Address = envAddress
+		cfg.Address = "http://" + envAddress
 	}
 
 }
