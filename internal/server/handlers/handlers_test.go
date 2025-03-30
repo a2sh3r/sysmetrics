@@ -137,12 +137,11 @@ func TestHandler_UpdateMetric(t *testing.T) {
 
 			res, err := ts.Client().Do(req)
 			require.NoError(t, err)
-			defer func(Body io.ReadCloser) {
-				err := Body.Close()
-				if err != nil {
-					return
+			defer func() {
+				if err := res.Body.Close(); err != nil {
+					t.Errorf("failed to close response body: %v", err)
 				}
-			}(res.Body)
+			}()
 
 			assert.Equal(t, tt.want.code, res.StatusCode)
 
@@ -236,7 +235,7 @@ func TestHandler_GetMetric(t *testing.T) {
 			},
 			want: want{
 				code:        http.StatusBadRequest,
-				response:    "Got metric, but its type differs from the requested one\n",
+				response:    "Got metric, but its type differs from the requested one: test_counter\n",
 				contentType: "text/plain; charset=utf-8",
 			},
 		},
@@ -258,7 +257,7 @@ func TestHandler_GetMetric(t *testing.T) {
 			},
 			want: want{
 				code:        http.StatusBadRequest,
-				response:    "Got metric, but its type differs from the requested one\n",
+				response:    "Got metric, but its type differs from the requested one: test_counter\n",
 				contentType: "text/plain; charset=utf-8",
 			},
 		},
@@ -272,7 +271,7 @@ func TestHandler_GetMetric(t *testing.T) {
 				url:    "/value/gauge/test_counter",
 			},
 			want: want{
-				code:        http.StatusBadRequest,
+				code:        http.StatusNotFound,
 				response:    "Failed to get metric: metric test_counter not found\n",
 				contentType: "text/plain; charset=utf-8",
 			},
@@ -314,12 +313,11 @@ func TestHandler_GetMetric(t *testing.T) {
 
 			res, err := ts.Client().Do(req)
 			require.NoError(t, err)
-			defer func(Body io.ReadCloser) {
-				err := Body.Close()
-				if err != nil {
-					return
+			defer func() {
+				if err := res.Body.Close(); err != nil {
+					t.Errorf("failed to close response body: %v", err)
 				}
-			}(res.Body)
+			}()
 
 			assert.Equal(t, tt.want.code, res.StatusCode)
 
@@ -419,12 +417,11 @@ func TestHandler_GetMetrics(t *testing.T) {
 
 			res, err := ts.Client().Do(req)
 			require.NoError(t, err)
-			defer func(Body io.ReadCloser) {
-				err := Body.Close()
-				if err != nil {
-					return
+			defer func() {
+				if err := res.Body.Close(); err != nil {
+					t.Errorf("failed to close response body: %v", err)
 				}
-			}(res.Body)
+			}()
 
 			assert.Equal(t, tt.want.code, res.StatusCode)
 
