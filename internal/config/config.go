@@ -5,13 +5,13 @@ import (
 )
 
 type AgentConfig struct {
-	PollInterval   time.Duration
-	ReportInterval time.Duration
-	Address        string
+	PollInterval   time.Duration `env:"POLL_INTERVAL"`
+	ReportInterval time.Duration `env:"REPORT_INTERVAL"`
+	Address        string        `env:"ADDRESS"`
 }
 
 type ServerConfig struct {
-	Address string
+	Address string `env:"ADDRESS"`
 }
 
 func NewAgentConfig() *AgentConfig {

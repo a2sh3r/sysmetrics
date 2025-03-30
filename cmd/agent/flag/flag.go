@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/a2sh3r/sysmetrics/internal/config"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -62,4 +63,24 @@ func ParseFlags(cfg *config.AgentConfig) {
 	if reportInterval > 0 {
 		cfg.ReportInterval = time.Duration(reportInterval) * time.Second
 	}
+
+	if envPollInterval := os.Getenv("POLL_INTERVAL"); envPollInterval != "" {
+		interval, err := strconv.ParseFloat(envPollInterval, 64)
+		if err == nil {
+			cfg.PollInterval = time.Duration(interval) * time.Second
+		}
+	}
+
+	if envReportInterval := os.Getenv("REPORT_INTERVAL"); envReportInterval != "" {
+		interval, err := strconv.ParseFloat(envReportInterval, 64)
+		if err == nil {
+			cfg.PollInterval = time.Duration(interval) * time.Second
+		}
+	}
+
+	if envAddress := os.Getenv("ADDRESS"); envAddress != "" {
+		fmt.Println(envAddress)
+		cfg.Address = envAddress
+	}
+
 }

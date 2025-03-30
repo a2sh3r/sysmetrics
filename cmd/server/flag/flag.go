@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/a2sh3r/sysmetrics/internal/config"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -44,5 +45,9 @@ func ParseFlags(cfg *config.ServerConfig) {
 
 	if addr.Port != 0 {
 		cfg.Address = addr.String()
+	}
+
+	if envAddress := os.Getenv("ADDRESS"); envAddress != "" {
+		cfg.Address = envAddress
 	}
 }
