@@ -1,6 +1,8 @@
 package main
 
 import (
+	"github.com/a2sh3r/sysmetrics/cmd/server/flag"
+	"github.com/a2sh3r/sysmetrics/internal/config"
 	"github.com/a2sh3r/sysmetrics/internal/server/handlers"
 	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
 	"github.com/a2sh3r/sysmetrics/internal/server/services/metric"
@@ -10,7 +12,9 @@ import (
 )
 
 func main() {
-	log.Println("Server is staring")
+	cfg := config.NewServerConfig()
+
+	flag.ParseFlags(cfg)
 
 	memStorage := memstorage.NewMemStorage()
 
@@ -20,7 +24,9 @@ func main() {
 
 	handler := handlers.NewHandler(metricService)
 
-	if err := http.ListenAndServe(":8080", handlers.NewRouter(handler)); err != nil {
+	log.Printf("Server is staring on address: %s", cfg.Address)
+
+	if err := http.ListenAndServe(cfg.Address, handlers.NewRouter(handler)); err != nil {
 		panic(err)
 	}
 }

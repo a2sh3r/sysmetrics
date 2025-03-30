@@ -3,9 +3,9 @@ package agent
 import (
 	"context"
 	"github.com/a2sh3r/sysmetrics/internal/agent/collector"
-	"github.com/a2sh3r/sysmetrics/internal/agent/config"
 	"github.com/a2sh3r/sysmetrics/internal/agent/metrics"
 	"github.com/a2sh3r/sysmetrics/internal/agent/sender"
+	"github.com/a2sh3r/sysmetrics/internal/config"
 	"log"
 	"time"
 )
@@ -17,10 +17,10 @@ type Agent struct {
 	reportInterval time.Duration
 }
 
-func NewAgent(cfg *config.Config) *Agent {
+func NewAgent(cfg *config.AgentConfig) *Agent {
 	return &Agent{
 		collector:      collector.NewCollector(),
-		sender:         sender.NewSender(cfg.ServerAddress),
+		sender:         sender.NewSender(cfg.Address),
 		pollInterval:   cfg.PollInterval,
 		reportInterval: cfg.ReportInterval,
 	}

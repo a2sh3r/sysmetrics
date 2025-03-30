@@ -3,8 +3,8 @@ package agent
 import (
 	"context"
 	"github.com/a2sh3r/sysmetrics/internal/agent/collector"
-	"github.com/a2sh3r/sysmetrics/internal/agent/config"
 	"github.com/a2sh3r/sysmetrics/internal/agent/sender"
+	"github.com/a2sh3r/sysmetrics/internal/config"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
@@ -63,7 +63,7 @@ func TestAgent_Run(t *testing.T) {
 
 func TestNewAgent(t *testing.T) {
 	type args struct {
-		cfg *config.Config
+		cfg *config.AgentConfig
 	}
 	tests := []struct {
 		name string
@@ -73,8 +73,8 @@ func TestNewAgent(t *testing.T) {
 		{
 			name: "Test #1 create agent with valid config",
 			args: args{
-				cfg: &config.Config{
-					ServerAddress:  "http://localhost:8080",
+				cfg: &config.AgentConfig{
+					Address:        "http://localhost:8080",
 					PollInterval:   2 * time.Second,
 					ReportInterval: time.Second * 10,
 				},

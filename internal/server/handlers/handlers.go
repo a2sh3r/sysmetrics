@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"github.com/a2sh3r/sysmetrics/internal/server/services/metric"
 	"github.com/go-chi/chi/v5"
@@ -57,6 +58,10 @@ func (h *Handler) UpdateMetric(w http.ResponseWriter, r *http.Request) {
 	metricName := chi.URLParam(r, "metricName")
 	metricValue := chi.URLParam(r, "metricValue")
 
+	if err := validateParams(metricType, metricName, metricValue); err != nil {
+		http.Error(w, fmt.Sprintf("Failed to update metric: %s", err), http.StatusBadRequest)
+	}
+
 	switch metricType {
 	case "gauge":
 		value, err := strconv.ParseFloat(metricValue, 64)
@@ -100,6 +105,10 @@ func (h *Handler) GetMetric(w http.ResponseWriter, r *http.Request) {
 
 	metricType := chi.URLParam(r, "metricType")
 	metricName := chi.URLParam(r, "metricName")
+
+	if err := validateParams(metricType, metricName); err != nil {
+		http.Error(w, fmt.Sprintf("Failed to update metric: %s", err), http.StatusBadRequest)
+	}
 
 	responseMetric, err := h.service.GetMetric(metricName)
 	if err != nil {
@@ -175,4 +184,13 @@ func (h *Handler) GetMetrics(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func validateParams(params ...string) error {
+	for _, p := range params {
+		if p == "" {
+			return errors.New("one of metric parameters are null")
+		}
+	}
+	return nil
 }
