@@ -9,7 +9,7 @@ import (
 type AgentConfig struct {
 	PollInterval   time.Duration `env:"POLL_INTERVAL" envDefault:"2s"`
 	ReportInterval time.Duration `env:"REPORT_INTERVAL" envDefault:"10s"`
-	Address        string        `env:"ADDRESS" envDefault:"http://localhost:8080"`
+	Address        string        `env:"ADDRESS" envDefault:"localhost:8080"`
 }
 
 type ServerConfig struct {
@@ -21,6 +21,7 @@ func NewAgentConfig() (*AgentConfig, error) {
 	if err := env.Parse(cfg); err != nil {
 		return nil, fmt.Errorf("failed to parse environment variables: %w", err)
 	}
+	cfg.Address = "http://" + cfg.Address
 	return cfg, nil
 }
 
