@@ -1,7 +1,8 @@
-package metric
+package services
 
 import (
 	"fmt"
+	"github.com/a2sh3r/sysmetrics/internal/constants"
 	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -9,7 +10,7 @@ import (
 
 func TestNewService(t *testing.T) {
 	type args struct {
-		repo repositories.MetricRepository
+		repo MetricRepository
 	}
 	tests := []struct {
 		name string
@@ -37,7 +38,7 @@ func TestNewService(t *testing.T) {
 
 func TestService_UpdateCounterMetric(t *testing.T) {
 	type fields struct {
-		repo repositories.MetricRepository
+		repo MetricRepository
 	}
 	type args struct {
 		name  string
@@ -89,7 +90,7 @@ func TestService_UpdateCounterMetric(t *testing.T) {
 
 func TestService_UpdateGaugeMetric(t *testing.T) {
 	type fields struct {
-		repo repositories.MetricRepository
+		repo MetricRepository
 	}
 	type args struct {
 		name  string
@@ -141,7 +142,7 @@ func TestService_UpdateGaugeMetric(t *testing.T) {
 
 func TestService_GetMetrics(t *testing.T) {
 	type fields struct {
-		repo repositories.MetricRepository
+		repo MetricRepository
 	}
 	tests := []struct {
 		name    string
@@ -155,11 +156,11 @@ func TestService_GetMetrics(t *testing.T) {
 				repo: &mockRepo{
 					metrics: map[string]repositories.Metric{
 						"test_gauge": {
-							Type:  "gauge",
+							Type:  constants.MetricTypeGauge,
 							Value: 123.45,
 						},
 						"test_counter": {
-							Type:  "counter",
+							Type:  constants.MetricTypeCounter,
 							Value: int64(123),
 						},
 					},
@@ -167,11 +168,11 @@ func TestService_GetMetrics(t *testing.T) {
 			},
 			want: map[string]repositories.Metric{
 				"test_gauge": {
-					Type:  "gauge",
+					Type:  constants.MetricTypeGauge,
 					Value: 123.45,
 				},
 				"test_counter": {
-					Type:  "counter",
+					Type:  constants.MetricTypeCounter,
 					Value: int64(123),
 				},
 			},
@@ -196,7 +197,7 @@ func TestService_GetMetrics(t *testing.T) {
 
 func TestService_GetMetric(t *testing.T) {
 	type fields struct {
-		repo repositories.MetricRepository
+		repo MetricRepository
 	}
 	type args struct {
 		name string
@@ -214,11 +215,11 @@ func TestService_GetMetric(t *testing.T) {
 				repo: &mockRepo{
 					metrics: map[string]repositories.Metric{
 						"test_gauge": {
-							Type:  "gauge",
+							Type:  constants.MetricTypeGauge,
 							Value: 123.45,
 						},
 						"test_counter": {
-							Type:  "counter",
+							Type:  constants.MetricTypeCounter,
 							Value: int64(123),
 						},
 					},
@@ -228,7 +229,7 @@ func TestService_GetMetric(t *testing.T) {
 				name: "test_gauge",
 			},
 			want: repositories.Metric{
-				Type:  "gauge",
+				Type:  constants.MetricTypeGauge,
 				Value: 123.45,
 			},
 			wantErr: false,

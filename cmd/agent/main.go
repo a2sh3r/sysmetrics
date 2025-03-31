@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"github.com/a2sh3r/sysmetrics/cmd/agent/flag"
 	"github.com/a2sh3r/sysmetrics/internal/agent"
 	"github.com/a2sh3r/sysmetrics/internal/config"
 	"log"
@@ -11,9 +10,13 @@ import (
 )
 
 func main() {
-	cfg := config.NewAgentConfig()
+	cfg, err := config.NewAgentConfig()
+	if err != nil {
+		log.Printf("Error while creating new config: %v", err)
+		return
+	}
 
-	flag.ParseFlags(cfg)
+	cfg.ParseFlags()
 
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()

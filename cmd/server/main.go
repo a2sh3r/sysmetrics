@@ -1,26 +1,29 @@
 package main
 
 import (
-	"github.com/a2sh3r/sysmetrics/cmd/server/flag"
 	"github.com/a2sh3r/sysmetrics/internal/config"
 	"github.com/a2sh3r/sysmetrics/internal/server/handlers"
 	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
-	"github.com/a2sh3r/sysmetrics/internal/server/services/metric"
+	"github.com/a2sh3r/sysmetrics/internal/server/services"
 	"github.com/a2sh3r/sysmetrics/internal/server/storage/memstorage"
 	"log"
 	"net/http"
 )
 
 func main() {
-	cfg := config.NewServerConfig()
+	cfg, err := config.NewServerConfig()
+	if err != nil {
+		log.Printf("Error while creating new config: %v", err)
+		return
+	}
 
-	flag.ParseFlags(cfg)
+	cfg.ParseFlags()
 
 	memStorage := memstorage.NewMemStorage()
 
 	metricRepo := repositories.NewMetricRepo(memStorage)
 
-	metricService := metric.NewService(metricRepo)
+	metricService := services.NewService(metricRepo)
 
 	handler := handlers.NewHandler(metricService)
 

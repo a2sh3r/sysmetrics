@@ -2,6 +2,7 @@ package sender
 
 import (
 	"github.com/a2sh3r/sysmetrics/internal/agent/metrics"
+	"github.com/a2sh3r/sysmetrics/internal/constants"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
@@ -135,7 +136,7 @@ func TestSender_sendMetric(t *testing.T) {
 				serverAddress: "http://localhost:8080",
 			},
 			args: args{
-				metricType: "counter",
+				metricType: constants.MetricTypeCounter,
 				metricName: "PollCount",
 				value:      int64(1),
 			},
@@ -159,7 +160,7 @@ func TestSender_sendMetric(t *testing.T) {
 				serverAddress: "http://localhost:8080",
 			},
 			args: args{
-				metricType: "gauge",
+				metricType: constants.MetricTypeGauge,
 				metricName: "Alloc",
 				value:      11.1,
 			},
@@ -183,7 +184,7 @@ func TestSender_sendMetric(t *testing.T) {
 				serverAddress: "http://localhoststs:8080",
 			},
 			args: args{
-				metricType: "gauge",
+				metricType: constants.MetricTypeGauge,
 				metricName: "Alloc",
 				value:      11.0,
 			},

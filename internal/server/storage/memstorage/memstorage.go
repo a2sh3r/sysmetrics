@@ -3,6 +3,7 @@ package memstorage
 import (
 	"errors"
 	"fmt"
+	"github.com/a2sh3r/sysmetrics/internal/constants"
 	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
 	"sync"
 )
@@ -74,7 +75,7 @@ func (ms *MemStorage) UpdateMetric(metricName string, metric repositories.Metric
 		return ErrMetricsMapNil
 	}
 
-	if metric.Type != "counter" && metric.Type != "gauge" {
+	if metric.Type != constants.MetricTypeCounter && metric.Type != constants.MetricTypeGauge {
 		return ErrMetricInvalidType
 	}
 
@@ -90,12 +91,12 @@ func (ms *MemStorage) UpdateMetric(metricName string, metric repositories.Metric
 	}
 
 	switch metric.Type {
-	case "counter":
+	case constants.MetricTypeCounter:
 		err := ms.updateCounterMetric(&existingMetric, metric)
 		if err != nil {
 			return err
 		}
-	case "gauge":
+	case constants.MetricTypeGauge:
 		err := ms.updateGaugeMetric(&existingMetric, metric)
 		if err != nil {
 			return err
@@ -108,7 +109,7 @@ func (ms *MemStorage) UpdateMetric(metricName string, metric repositories.Metric
 }
 
 func (ms *MemStorage) updateCounterMetric(existingMetric *repositories.Metric, newMetric repositories.Metric) error {
-	if newMetric.Type != "counter" {
+	if newMetric.Type != constants.MetricTypeCounter {
 		return ErrMetricInvalidType
 	}
 	newValue, ok := newMetric.Value.(int64)
@@ -131,7 +132,7 @@ func (ms *MemStorage) updateCounterMetric(existingMetric *repositories.Metric, n
 }
 
 func (ms *MemStorage) updateGaugeMetric(existingMetric *repositories.Metric, newMetric repositories.Metric) error {
-	if newMetric.Type != "gauge" {
+	if newMetric.Type != constants.MetricTypeGauge {
 		return ErrMetricInvalidType
 	}
 	newValue, ok := newMetric.Value.(float64)

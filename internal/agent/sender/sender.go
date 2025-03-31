@@ -3,6 +3,7 @@ package sender
 import (
 	"fmt"
 	"github.com/a2sh3r/sysmetrics/internal/agent/metrics"
+	"github.com/a2sh3r/sysmetrics/internal/constants"
 	"io"
 	"log"
 	"net/http"
@@ -25,7 +26,7 @@ func (s *Sender) sendMetric(metricType, metricName string, value interface{}) er
 	case int64:
 		strValue = fmt.Sprintf("%d", v)
 	case float64:
-		if metricType == "counter" {
+		if metricType == constants.MetricTypeCounter {
 			return fmt.Errorf("invalid value type for metric type %v", metricType)
 		}
 		strValue = fmt.Sprintf("%f", v)
@@ -80,9 +81,9 @@ func (s *Sender) SendMetrics(metricsBatch []*metrics.Metrics) error {
 
 			var metricType string
 			if fieldName == "PollCount" {
-				metricType = "counter"
+				metricType = constants.MetricTypeCounter
 			} else {
-				metricType = "gauge"
+				metricType = constants.MetricTypeGauge
 			}
 
 			var value interface{}

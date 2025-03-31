@@ -1,6 +1,7 @@
 package memstorage
 
 import (
+	"github.com/a2sh3r/sysmetrics/internal/constants"
 	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
 	"github.com/stretchr/testify/assert"
 	"sync"
@@ -26,13 +27,13 @@ func TestMemStorage_GetMetric(t *testing.T) {
 			name: "Test #1 get existing metric",
 			fields: fields{
 				metrics: map[string]repositories.Metric{
-					"test": {Type: "gauge", Value: 123.45},
+					"test": {Type: constants.MetricTypeGauge, Value: 123.45},
 				},
 			},
 			args: args{
 				name: "test",
 			},
-			want:    repositories.Metric{Type: "gauge", Value: 123.45},
+			want:    repositories.Metric{Type: constants.MetricTypeGauge, Value: 123.45},
 			wantErr: false,
 		},
 		{
@@ -101,18 +102,18 @@ func TestMemStorage_GetMetrics(t *testing.T) {
 			name: "Test #1 get existing metric",
 			fields: fields{
 				metrics: map[string]repositories.Metric{
-					"test_gauge":   {Type: "gauge", Value: 123.45},
-					"test_counter": {Type: "counter", Value: int64(123)},
+					"test_gauge":   {Type: constants.MetricTypeGauge, Value: 123.45},
+					"test_counter": {Type: constants.MetricTypeCounter, Value: int64(123)},
 				},
 			},
 
 			want: map[string]repositories.Metric{
 				"test_gauge": {
-					Type:  "gauge",
+					Type:  constants.MetricTypeGauge,
 					Value: 123.45,
 				},
 				"test_counter": {
-					Type:  "counter",
+					Type:  constants.MetricTypeCounter,
 					Value: int64(123),
 				},
 			},
@@ -155,13 +156,13 @@ func TestMemStorage_UpdateMetric(t *testing.T) {
 			name: "Test #1 update existing metric",
 			fields: fields{
 				metrics: map[string]repositories.Metric{
-					"test": {Type: "counter", Value: int64(10)},
+					"test": {Type: constants.MetricTypeCounter, Value: int64(10)},
 				},
 			},
 			args: args{
 				name: "test",
 				metric: repositories.Metric{
-					Type:  "counter",
+					Type:  constants.MetricTypeCounter,
 					Value: int64(20),
 				},
 			},
@@ -175,7 +176,7 @@ func TestMemStorage_UpdateMetric(t *testing.T) {
 			args: args{
 				name: "new",
 				metric: repositories.Metric{
-					Type:  "gauge",
+					Type:  constants.MetricTypeGauge,
 					Value: 123.45,
 				},
 			},
@@ -185,7 +186,7 @@ func TestMemStorage_UpdateMetric(t *testing.T) {
 			name: "Test #3 update metric with invalid type",
 			fields: fields{
 				metrics: map[string]repositories.Metric{
-					"test": {Type: "counter", Value: int64(10)},
+					"test": {Type: constants.MetricTypeCounter, Value: int64(10)},
 				},
 			},
 			args: args{
@@ -205,7 +206,7 @@ func TestMemStorage_UpdateMetric(t *testing.T) {
 			args: args{
 				name: "",
 				metric: repositories.Metric{
-					Type:  "gauge",
+					Type:  constants.MetricTypeGauge,
 					Value: 123.45,
 				},
 			},
@@ -219,7 +220,7 @@ func TestMemStorage_UpdateMetric(t *testing.T) {
 			args: args{
 				name: "test",
 				metric: repositories.Metric{
-					Type:  "gauge",
+					Type:  constants.MetricTypeGauge,
 					Value: 123.45,
 				},
 			},
@@ -264,11 +265,11 @@ func TestMemStorage_updateCounterMetric(t *testing.T) {
 			},
 			args: args{
 				existingMetric: &repositories.Metric{
-					Type:  "counter",
+					Type:  constants.MetricTypeCounter,
 					Value: int64(10),
 				},
 				newMetric: repositories.Metric{
-					Type:  "counter",
+					Type:  constants.MetricTypeCounter,
 					Value: int64(20),
 				},
 			},
@@ -281,7 +282,7 @@ func TestMemStorage_updateCounterMetric(t *testing.T) {
 			},
 			args: args{
 				existingMetric: &repositories.Metric{
-					Type:  "counter",
+					Type:  constants.MetricTypeCounter,
 					Value: int64(10),
 				},
 				newMetric: repositories.Metric{
@@ -298,11 +299,11 @@ func TestMemStorage_updateCounterMetric(t *testing.T) {
 			},
 			args: args{
 				existingMetric: &repositories.Metric{
-					Type:  "counter",
+					Type:  constants.MetricTypeCounter,
 					Value: int64(10),
 				},
 				newMetric: repositories.Metric{
-					Type:  "counter",
+					Type:  constants.MetricTypeCounter,
 					Value: "invalid",
 				},
 			},
@@ -347,12 +348,12 @@ func TestMemStorage_updateGaugeMetric(t *testing.T) {
 			},
 			args: args{
 				existingMetric: &repositories.Metric{
-					Type:  "gauge",
-					Value: float64(10.5),
+					Type:  constants.MetricTypeGauge,
+					Value: 10.5,
 				},
 				newMetric: repositories.Metric{
-					Type:  "gauge",
-					Value: float64(20.5),
+					Type:  constants.MetricTypeGauge,
+					Value: 20.5,
 				},
 			},
 			wantErr: false,
@@ -364,12 +365,12 @@ func TestMemStorage_updateGaugeMetric(t *testing.T) {
 			},
 			args: args{
 				existingMetric: &repositories.Metric{
-					Type:  "gauge",
-					Value: float64(10.5),
+					Type:  constants.MetricTypeGauge,
+					Value: 10.5,
 				},
 				newMetric: repositories.Metric{
 					Type:  "invalid",
-					Value: float64(20.5),
+					Value: 20.5,
 				},
 			},
 			wantErr: true,
@@ -381,11 +382,11 @@ func TestMemStorage_updateGaugeMetric(t *testing.T) {
 			},
 			args: args{
 				existingMetric: &repositories.Metric{
-					Type:  "gauge",
-					Value: float64(10.5),
+					Type:  constants.MetricTypeGauge,
+					Value: 10.5,
 				},
 				newMetric: repositories.Metric{
-					Type:  "gauge",
+					Type:  constants.MetricTypeGauge,
 					Value: "invalid",
 				},
 			},

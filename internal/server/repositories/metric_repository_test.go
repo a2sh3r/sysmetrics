@@ -3,6 +3,7 @@ package repositories
 import (
 	"errors"
 	"fmt"
+	"github.com/a2sh3r/sysmetrics/internal/constants"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -26,14 +27,14 @@ func TestMetricRepo_GetMetric(t *testing.T) {
 			fields: fields{
 				storage: &MockStorage{
 					metrics: map[string]Metric{
-						"test": {Type: "gauge", Value: 123.45},
+						"test": {Type: constants.MetricTypeGauge, Value: 123.45},
 					},
 				},
 			},
 			args: args{
 				name: "test",
 			},
-			want:    Metric{Type: "gauge", Value: 123.45},
+			want:    Metric{Type: constants.MetricTypeGauge, Value: 123.45},
 			wantErr: false,
 		},
 		{
@@ -80,14 +81,14 @@ func TestMetricRepo_GetMetrics(t *testing.T) {
 			fields: fields{
 				storage: &MockStorage{
 					metrics: map[string]Metric{
-						"test":  {Type: "gauge", Value: 123.45},
-						"test2": {Type: "counter", Value: 123},
+						"test":  {Type: constants.MetricTypeGauge, Value: 123.45},
+						"test2": {Type: constants.MetricTypeCounter, Value: 123},
 					},
 				},
 			},
 			want: map[string]Metric{
-				"test":  {Type: "gauge", Value: 123.45},
-				"test2": {Type: "counter", Value: 123},
+				"test":  {Type: constants.MetricTypeGauge, Value: 123.45},
+				"test2": {Type: constants.MetricTypeCounter, Value: 123},
 			},
 			wantErr: false,
 		},
@@ -142,7 +143,7 @@ func TestMetricRepo_SaveMetric(t *testing.T) {
 			args: args{
 				name:       "test",
 				value:      123.45,
-				metricType: "gauge",
+				metricType: constants.MetricTypeGauge,
 			},
 			wantErr: false,
 		},
@@ -154,7 +155,7 @@ func TestMetricRepo_SaveMetric(t *testing.T) {
 			args: args{
 				name:       "test",
 				value:      123.45,
-				metricType: "gauge",
+				metricType: constants.MetricTypeGauge,
 			},
 			wantErr: true,
 		},

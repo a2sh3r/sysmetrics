@@ -1,13 +1,12 @@
-package flag
+package config
 
 import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/a2sh3r/sysmetrics/internal/config"
-	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type NetAddress struct {
@@ -37,7 +36,34 @@ func (na *NetAddress) Set(flagValue string) error {
 	return nil
 }
 
-func ParseFlags(cfg *config.ServerConfig) {
+func (cfg *AgentConfig) ParseFlags() {
+	addr := new(NetAddress)
+
+	var (
+		pollInterval   float64
+		reportInterval float64
+	)
+
+	flag.Var(addr, "a", "Net address host:port")
+	flag.Float64Var(&pollInterval, "p", 2, "poll interval to collect metrics")
+	flag.Float64Var(&reportInterval, "r", 10, "report interval to report metrics to server")
+
+	flag.Parse()
+
+	if addr.Port != 0 {
+		cfg.Address = "http://" + addr.String()
+	}
+
+	if pollInterval > 0 {
+		cfg.PollInterval = time.Duration(pollInterval) * time.Second
+	}
+
+	if reportInterval > 0 {
+		cfg.ReportInterval = time.Duration(reportInterval) * time.Second
+	}
+}
+
+func (cfg *ServerConfig) ParseFlags() {
 	addr := new(NetAddress)
 
 	flag.Var(addr, "a", "Net address host:port")
@@ -45,9 +71,5 @@ func ParseFlags(cfg *config.ServerConfig) {
 
 	if addr.Port != 0 {
 		cfg.Address = addr.String()
-	}
-
-	if envAddress := os.Getenv("ADDRESS"); envAddress != "" {
-		cfg.Address = envAddress
 	}
 }
