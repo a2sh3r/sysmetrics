@@ -75,15 +75,15 @@ func TestNewAgent(t *testing.T) {
 			args: args{
 				cfg: &config.AgentConfig{
 					Address:        "http://localhost:8080",
-					PollInterval:   2 * time.Second,
-					ReportInterval: time.Second * 10,
+					PollInterval:   2,
+					ReportInterval: 10,
 				},
 			},
 			want: &Agent{
 				collector:      &collector.Collector{},
 				sender:         sender.NewSender("http://localhost:8080"),
-				pollInterval:   2 * time.Second,
-				reportInterval: time.Second * 10,
+				pollInterval:   time.Duration(2) * time.Second,
+				reportInterval: time.Duration(10) * time.Second,
 			},
 		},
 	}

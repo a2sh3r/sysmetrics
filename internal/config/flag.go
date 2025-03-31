@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 )
 
 type NetAddress struct {
@@ -55,11 +54,11 @@ func (cfg *AgentConfig) ParseFlags() {
 	}
 
 	if pollInterval > 0 {
-		cfg.PollInterval = time.Duration(pollInterval) * time.Second
+		cfg.PollInterval = pollInterval
 	}
 
 	if reportInterval > 0 {
-		cfg.ReportInterval = time.Duration(reportInterval) * time.Second
+		cfg.ReportInterval = reportInterval
 	}
 }
 

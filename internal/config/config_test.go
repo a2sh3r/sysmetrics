@@ -4,7 +4,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"testing"
-	"time"
 )
 
 func TestNewConfig(t *testing.T) {
@@ -15,8 +14,8 @@ func TestNewConfig(t *testing.T) {
 		{
 			name: "Test #1 create valid config",
 			want: &AgentConfig{
-				PollInterval:   2 * time.Second,
-				ReportInterval: 10 * time.Second,
+				PollInterval:   2,
+				ReportInterval: 10,
 				Address:        "http://localhost:8080",
 			},
 		},

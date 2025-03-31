@@ -3,13 +3,12 @@ package config
 import (
 	"fmt"
 	"github.com/caarlos0/env/v11"
-	"time"
 )
 
 type AgentConfig struct {
-	PollInterval   time.Duration `env:"POLL_INTERVAL" envDefault:"2s"`
-	ReportInterval time.Duration `env:"REPORT_INTERVAL" envDefault:"10s"`
-	Address        string        `env:"ADDRESS" envDefault:"localhost:8080"`
+	PollInterval   float64 `env:"POLL_INTERVAL" envDefault:"2"`
+	ReportInterval float64 `env:"REPORT_INTERVAL" envDefault:"10"`
+	Address        string  `env:"ADDRESS" envDefault:"localhost:8080"`
 }
 
 type ServerConfig struct {
@@ -22,6 +21,7 @@ func NewAgentConfig() (*AgentConfig, error) {
 		return nil, fmt.Errorf("failed to parse environment variables: %w", err)
 	}
 	cfg.Address = "http://" + cfg.Address
+
 	return cfg, nil
 }
 

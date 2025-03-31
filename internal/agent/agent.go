@@ -21,8 +21,8 @@ func NewAgent(cfg *config.AgentConfig) *Agent {
 	return &Agent{
 		collector:      collector.NewCollector(),
 		sender:         sender.NewSender(cfg.Address),
-		pollInterval:   cfg.PollInterval,
-		reportInterval: cfg.ReportInterval,
+		pollInterval:   time.Second * time.Duration(cfg.PollInterval),
+		reportInterval: time.Second * time.Duration(cfg.ReportInterval),
 	}
 }
 
