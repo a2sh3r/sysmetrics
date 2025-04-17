@@ -41,11 +41,13 @@ func (cfg *AgentConfig) ParseFlags() {
 	var (
 		pollInterval   float64
 		reportInterval float64
+		logLevel       string
 	)
 
 	flag.Var(addr, "a", "Net address host:port")
 	flag.Float64Var(&pollInterval, "p", 2, "poll interval to collect metrics")
 	flag.Float64Var(&reportInterval, "r", 10, "report interval to report metrics to server")
+	flag.StringVar(&logLevel, "l", "info", "log level")
 
 	flag.Parse()
 

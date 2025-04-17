@@ -1,12 +1,16 @@
 package handlers
 
 import (
+	"github.com/a2sh3r/sysmetrics/internal/server/middleware"
 	"github.com/go-chi/chi/v5"
 	"net/http"
 )
 
 func NewRouter(handler *Handler) chi.Router {
 	r := chi.NewRouter()
+
+	r.Use(middleware.NewLoggingMiddleware())
+
 	r.MethodNotAllowed(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	})

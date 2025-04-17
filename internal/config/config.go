@@ -12,7 +12,8 @@ type AgentConfig struct {
 }
 
 type ServerConfig struct {
-	Address string `env:"ADDRESS" envDefault:"localhost:8080"`
+	Address  string `env:"ADDRESS" envDefault:"localhost:8080"`
+	LogLevel string `env:"LOG_LEVEL" envDefault:"info"`
 }
 
 func NewAgentConfig() (*AgentConfig, error) {
