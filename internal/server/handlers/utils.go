@@ -38,3 +38,7 @@ func formatMetric(metricName *string, value interface{}) (string, error) {
 		return "", errors.New("unsupported metric value type")
 	}
 }
+
+func floatPointer(f float64) *float64 {
+	return &f
+}

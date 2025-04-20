@@ -1,9 +1,12 @@
 package sender
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"github.com/a2sh3r/sysmetrics/internal/agent/metrics"
 	"github.com/a2sh3r/sysmetrics/internal/constants"
+	"github.com/a2sh3r/sysmetrics/internal/models"
 	"io"
 	"log"
 	"net/http"
@@ -12,49 +15,85 @@ import (
 
 type Sender struct {
 	serverAddress string
+	client        *http.Client
 }
 
 func NewSender(serverAddress string) *Sender {
 	return &Sender{
 		serverAddress: serverAddress,
+		client:        &http.Client{},
 	}
 }
 
-func (s *Sender) sendMetric(metricType, metricName string, value interface{}) error {
-	var strValue string
-	switch v := value.(type) {
-	case int64:
-		strValue = fmt.Sprintf("%d", v)
-	case float64:
-		if metricType == constants.MetricTypeCounter {
-			return fmt.Errorf("invalid value type for metric type %v", metricType)
+func toModelMetrics(m *metrics.Metrics) []*models.Metrics {
+	var result []*models.Metrics
+	val := reflect.ValueOf(m).Elem()
+	typ := val.Type()
+
+	for i := 0; i < val.NumField(); i++ {
+		field := val.Field(i)
+		fieldName := typ.Field(i).Name
+
+		switch field.Kind() {
+		case reflect.Float64:
+			fv := field.Float()
+			result = append(result, &models.Metrics{
+				ID:    fieldName,
+				MType: constants.MetricTypeGauge,
+				Delta: nil,
+				Value: &fv,
+			})
+		case reflect.Int64:
+			iv := field.Int()
+			result = append(result, &models.Metrics{
+				ID:    fieldName,
+				MType: constants.MetricTypeCounter,
+				Delta: &iv,
+				Value: nil,
+			})
+		default:
+			panic("unhandled default case")
 		}
-		strValue = fmt.Sprintf("%f", v)
-	default:
-		return fmt.Errorf("unsupported metric type: %T", v)
 	}
 
-	url := fmt.Sprintf("%s/update/%s/%s/%s", s.serverAddress, metricType, metricName, strValue)
+	return result
+}
 
-	res, err := http.Post(url, "text/plain", nil)
+func (s *Sender) sendMetricJSON(metric *models.Metrics) error {
+	data, err := json.Marshal(metric)
 	if err != nil {
-		return fmt.Errorf("failed to send HTTP request: %w", err)
+		return fmt.Errorf("failed to marshal metric %s: %w", metric.ID, err)
 	}
 
+	url := s.serverAddress + "/update/"
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(data))
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := s.client.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to send request: %w", err)
+	}
 	defer func() {
-		if res != nil && res.Body != nil {
-			if err := res.Body.Close(); err != nil {
-				log.Printf("Error closing response body: %v", err)
+		if resp != nil && resp.Body != nil {
+			if err := resp.Body.Close(); err != nil {
+				log.Printf("error closing response body: %v", err)
 			}
 		}
 	}()
 
-	body, err := io.ReadAll(res.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	log.Printf("Server response (status %d): %s", res.StatusCode, string(body))
+	log.Printf("Server response (status %d): %s", resp.StatusCode, string(body))
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("server returned status %d for metric %s", resp.StatusCode, metric.ID)
+	}
 
 	return nil
 }
@@ -72,35 +111,14 @@ func (s *Sender) SendMetrics(metricsBatch []*metrics.Metrics) error {
 		if m == nil {
 			return fmt.Errorf("metric is nil")
 		}
-		v := reflect.ValueOf(m).Elem()
-		t := v.Type()
-
-		for i := 0; i < v.NumField(); i++ {
-			fieldValue := v.Field(i)
-			fieldName := t.Field(i).Name
-
-			var metricType string
-			if fieldName == "PollCount" {
-				metricType = constants.MetricTypeCounter
-			} else {
-				metricType = constants.MetricTypeGauge
-			}
-
-			var value interface{}
-			switch fieldValue.Kind() {
-			case reflect.Int64:
-				value = fieldValue.Int()
-			case reflect.Float64:
-				value = fieldValue.Float()
-			default:
-				return fmt.Errorf("unsupported field type: %s", fieldValue.Kind())
-			}
-
-			err := s.sendMetric(metricType, fieldName, value)
+		modelMetrics := toModelMetrics(m)
+		for _, metric := range modelMetrics {
+			err := s.sendMetricJSON(metric)
 			if err != nil {
-				return fmt.Errorf("failed to send metric %s: %w", fieldName, err)
+				return fmt.Errorf("failed to send metric %s: %w", metric.ID, err)
 			}
 		}
 	}
+
 	return nil
 }

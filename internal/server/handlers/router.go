@@ -21,7 +21,9 @@ func NewRouter(handler *Handler) chi.Router {
 	r.Route("/", func(r chi.Router) {
 		r.Get("/", handler.GetMetrics)
 		r.Post("/update/{metricType}/{metricName}/{metricValue}", handler.UpdateMetric)
+		r.Post("/update/", handler.UpdateSerializedMetric)
 		r.Get("/value/{metricType}/{metricName}", handler.GetMetric)
+		r.Get("/value/", handler.GetSerializedMetric)
 	})
 
 	return r

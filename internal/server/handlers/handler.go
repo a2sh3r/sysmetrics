@@ -1,13 +1,20 @@
 package handlers
 
 import (
-	"github.com/a2sh3r/sysmetrics/internal/server/services"
+	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
 )
 
-type Handler struct {
-	service *services.Service
+type ServiceInterface interface {
+	UpdateGaugeMetric(name string, value float64) error
+	UpdateCounterMetric(name string, value int64) error
+	GetMetric(metricName string) (repositories.Metric, error)
+	GetMetrics() (map[string]repositories.Metric, error)
 }
 
-func NewHandler(service *services.Service) *Handler {
+type Handler struct {
+	service ServiceInterface
+}
+
+func NewHandler(service ServiceInterface) *Handler {
 	return &Handler{service: service}
 }
