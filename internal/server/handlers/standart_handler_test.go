@@ -51,7 +51,7 @@ func TestHandler_GetMetric(t *testing.T) {
 			want: want{
 				code:        http.StatusOK,
 				response:    "123.123\n",
-				contentType: "text/plain; charset=utf-8",
+				contentType: "text/html; charset=utf-8",
 			},
 		},
 		{
@@ -73,7 +73,7 @@ func TestHandler_GetMetric(t *testing.T) {
 			want: want{
 				code:        http.StatusOK,
 				response:    "123\n",
-				contentType: "text/plain; charset=utf-8",
+				contentType: "text/html; charset=utf-8",
 			},
 		},
 		{
@@ -95,7 +95,7 @@ func TestHandler_GetMetric(t *testing.T) {
 			want: want{
 				code:        http.StatusBadRequest,
 				response:    "Got metric, but its type differs from the requested one: test_counter\n",
-				contentType: "text/plain; charset=utf-8",
+				contentType: "text/html; charset=utf-8",
 			},
 		},
 		{
@@ -117,7 +117,7 @@ func TestHandler_GetMetric(t *testing.T) {
 			want: want{
 				code:        http.StatusBadRequest,
 				response:    "Got metric, but its type differs from the requested one: test_counter\n",
-				contentType: "text/plain; charset=utf-8",
+				contentType: "text/html; charset=utf-8",
 			},
 		},
 		{
@@ -132,7 +132,7 @@ func TestHandler_GetMetric(t *testing.T) {
 			want: want{
 				code:        http.StatusNotFound,
 				response:    "Failed to get metric: metric test_counter not found\n",
-				contentType: "text/plain; charset=utf-8",
+				contentType: "text/html; charset=utf-8",
 			},
 		},
 		{
@@ -154,7 +154,7 @@ func TestHandler_GetMetric(t *testing.T) {
 			want: want{
 				code:        http.StatusInternalServerError,
 				response:    "Metric value is nil\n",
-				contentType: "text/plain; charset=utf-8",
+				contentType: "text/html; charset=utf-8",
 			},
 		},
 	}
@@ -234,7 +234,7 @@ func TestHandler_GetMetrics(t *testing.T) {
 					"test_gauge 123.123",
 					"test_counter 123",
 				},
-				contentType: "text/plain; charset=utf-8",
+				contentType: "text/html; charset=utf-8",
 			},
 		},
 		{
@@ -258,7 +258,7 @@ func TestHandler_GetMetrics(t *testing.T) {
 				response: []string{
 					"unsupported metric value type",
 				},
-				contentType: "text/plain; charset=utf-8",
+				contentType: "text/html; charset=utf-8",
 			},
 		},
 	}
@@ -329,7 +329,7 @@ func TestHandler_UpdateMetric(t *testing.T) {
 			want: want{
 				code:        http.StatusOK,
 				response:    "Metric test is updated successfully with value 123.45",
-				contentType: "text/plain; charset=utf-8",
+				contentType: "text/html; charset=utf-8",
 			},
 		},
 		{
@@ -344,7 +344,7 @@ func TestHandler_UpdateMetric(t *testing.T) {
 			want: want{
 				code:        http.StatusOK,
 				response:    "Metric test is updated successfully with value 123",
-				contentType: "text/plain; charset=utf-8",
+				contentType: "text/html; charset=utf-8",
 			},
 		},
 		{
@@ -359,7 +359,7 @@ func TestHandler_UpdateMetric(t *testing.T) {
 			want: want{
 				code:        http.StatusMethodNotAllowed,
 				response:    "Method not allowed\n",
-				contentType: "text/plain; charset=utf-8",
+				contentType: "text/html; charset=utf-8",
 			},
 		},
 		{
@@ -374,7 +374,7 @@ func TestHandler_UpdateMetric(t *testing.T) {
 			want: want{
 				code:        http.StatusNotFound,
 				response:    "Invalid URL format\n",
-				contentType: "text/plain; charset=utf-8",
+				contentType: "text/html; charset=utf-8",
 			},
 		},
 		{
@@ -389,7 +389,7 @@ func TestHandler_UpdateMetric(t *testing.T) {
 			want: want{
 				code:        http.StatusBadRequest,
 				response:    "Failed to update metric: invalid metric type: invalid\n",
-				contentType: "text/plain; charset=utf-8",
+				contentType: "text/html; charset=utf-8",
 			},
 		},
 		{
@@ -404,7 +404,7 @@ func TestHandler_UpdateMetric(t *testing.T) {
 			want: want{
 				code:        http.StatusBadRequest,
 				response:    "Failed to update metric: strconv.ParseFloat: parsing \"invalid\": invalid syntax\n",
-				contentType: "text/plain; charset=utf-8",
+				contentType: "text/html; charset=utf-8",
 			},
 		},
 	}
