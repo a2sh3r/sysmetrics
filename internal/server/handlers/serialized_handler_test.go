@@ -132,7 +132,7 @@ func TestHandler_GetSerializedMetric(t *testing.T) {
 				},
 			}),
 			args: args{
-				method: http.MethodGet,
+				method: http.MethodPost,
 				url:    "/value/",
 				body: models.Metrics{
 					ID:    "counter_metric",
@@ -148,7 +148,7 @@ func TestHandler_GetSerializedMetric(t *testing.T) {
 				metrics: map[string]repositories.Metric{},
 			}),
 			args: args{
-				method: http.MethodGet,
+				method: http.MethodPost,
 				url:    "/value/",
 				body: models.Metrics{
 					ID:    "missing_metric",
@@ -164,7 +164,7 @@ func TestHandler_GetSerializedMetric(t *testing.T) {
 				metrics: map[string]repositories.Metric{},
 			}),
 			args: args{
-				method: http.MethodGet,
+				method: http.MethodPost,
 				url:    "/value/",
 				body:   models.Metrics{},
 			},
