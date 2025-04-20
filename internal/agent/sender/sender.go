@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/a2sh3r/sysmetrics/internal/agent/metrics"
+	"github.com/a2sh3r/sysmetrics/internal/agent/utils"
 	"github.com/a2sh3r/sysmetrics/internal/constants"
 	"github.com/a2sh3r/sysmetrics/internal/models"
 	"io"
@@ -65,12 +66,18 @@ func (s *Sender) sendMetricJSON(metric *models.Metrics) error {
 		return fmt.Errorf("failed to marshal metric %s: %w", metric.ID, err)
 	}
 
+	compressedData, err := utils.CompressData(data)
+	if err != nil {
+		return fmt.Errorf("failed to compress data: %w", err)
+	}
+
 	url := s.serverAddress + "/update/"
-	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(data))
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(compressedData))
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Encoding", "gzip")
 
 	resp, err := s.client.Do(req)
 	if err != nil {

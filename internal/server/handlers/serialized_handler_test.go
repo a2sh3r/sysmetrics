@@ -5,11 +5,13 @@ import (
 	"encoding/json"
 	"github.com/a2sh3r/sysmetrics/internal/constants"
 	"github.com/a2sh3r/sysmetrics/internal/models"
+	"github.com/a2sh3r/sysmetrics/internal/server/middleware"
 	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
 	"github.com/a2sh3r/sysmetrics/internal/server/services"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -80,30 +82,60 @@ func TestHandler_UpdateSerializedMetric(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := &Handler{
-				service: tt.mockService,
-			}
-			ts := httptest.NewServer(NewRouter(h))
+			h := &Handler{service: tt.mockService}
+			ts := httptest.NewServer(middleware.NewGzipMiddleware()(NewRouter(h)))
 			defer ts.Close()
 
 			bodyBytes, _ := json.Marshal(tt.args.body)
-			req, err := http.NewRequest(tt.args.method, ts.URL+tt.args.url, bytes.NewBuffer(bodyBytes))
-			require.NoError(t, err)
-			req.Header.Set("Content-Type", "application/json")
 
-			res, err := ts.Client().Do(req)
-			require.NoError(t, err)
-			defer func() {
-				if err := res.Body.Close(); err != nil {
-					t.Errorf("failed to close response body: %v", err)
+			t.Run("plain request", func(t *testing.T) {
+				req, err := http.NewRequest(tt.args.method, ts.URL+tt.args.url, bytes.NewBuffer(bodyBytes))
+				require.NoError(t, err)
+				req.Header.Set("Content-Type", "application/json")
+				req.Header.Set("Accept-Encoding", "")
+
+				res, err := ts.Client().Do(req)
+				require.NoError(t, err)
+				defer func() {
+					if err := res.Body.Close(); err != nil {
+						log.Printf("failed to close res.Body: %v", err)
+					}
+				}()
+
+				respBody, err := io.ReadAll(res.Body)
+				require.NoError(t, err)
+
+				assert.Equal(t, tt.wantStatusCode, res.StatusCode)
+				assert.Equal(t, tt.wantContent+"\n", string(respBody))
+			})
+
+			t.Run("gzip response", func(t *testing.T) {
+				req, err := http.NewRequest(tt.args.method, ts.URL+tt.args.url, bytes.NewBuffer(bodyBytes))
+				require.NoError(t, err)
+				req.Header.Set("Content-Type", "application/json")
+				req.Header.Set("Accept-Encoding", "gzip")
+
+				res, err := ts.Client().Do(req)
+				require.NoError(t, err)
+				defer func() {
+					if err := res.Body.Close(); err != nil {
+						log.Printf("failed to close res.Body: %v", err)
+					}
+				}()
+
+				contentEncoding := res.Header.Get("Content-Encoding")
+				if contentEncoding != "" && contentEncoding != "gzip" {
+					t.Errorf("Expected 'gzip' in Content-Encoding header, but got '%s'", contentEncoding)
 				}
-			}()
 
-			respBody, err := io.ReadAll(res.Body)
-			require.NoError(t, err)
+				respBody, err := io.ReadAll(res.Body)
+				require.NoError(t, err)
 
-			assert.Equal(t, tt.wantStatusCode, res.StatusCode)
-			assert.Equal(t, tt.wantContent+"\n", string(respBody))
+				expectedBody := tt.wantContent + "\n"
+				require.NoError(t, err)
+				assert.Contains(t, string(respBody), expectedBody)
+				assert.Equal(t, tt.wantStatusCode, res.StatusCode)
+			})
 		})
 	}
 }
@@ -174,37 +206,72 @@ func TestHandler_GetSerializedMetric(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := &Handler{
-				service: tt.mockService,
-			}
-			ts := httptest.NewServer(NewRouter(h))
+			h := &Handler{service: tt.mockService}
+			ts := httptest.NewServer(middleware.NewGzipMiddleware()(NewRouter(h)))
 			defer ts.Close()
 
-			var req *http.Request
-			var err error
+			bodyBytes, _ := json.Marshal(tt.args.body)
 
-			if tt.name == "Test #3 invalid JSON input" {
-				req, err = http.NewRequest(tt.args.method, ts.URL+tt.args.url, bytes.NewBufferString(`{invalid_json}`))
-			} else {
-				bodyBytes, _ := json.Marshal(tt.args.body)
-				req, err = http.NewRequest(tt.args.method, ts.URL+tt.args.url, bytes.NewBuffer(bodyBytes))
-			}
-			require.NoError(t, err)
-			req.Header.Set("Content-Type", "application/json")
+			t.Run("plain request", func(t *testing.T) {
+				var req *http.Request
+				var err error
 
-			res, err := ts.Client().Do(req)
-			require.NoError(t, err)
-			defer func() {
-				if err := res.Body.Close(); err != nil {
-					t.Errorf("failed to close response body: %v", err)
+				if tt.name == "Test #3 invalid JSON input" {
+					req, err = http.NewRequest(tt.args.method, ts.URL+tt.args.url, bytes.NewBufferString(`{invalid_json}`))
+				} else {
+					req, err = http.NewRequest(tt.args.method, ts.URL+tt.args.url, bytes.NewBuffer(bodyBytes))
 				}
-			}()
+				require.NoError(t, err)
+				req.Header.Set("Content-Type", "application/json")
+				req.Header.Set("Accept-Encoding", "")
 
-			respBody, err := io.ReadAll(res.Body)
-			require.NoError(t, err)
+				res, err := ts.Client().Do(req)
+				require.NoError(t, err)
+				defer func() {
+					if err := res.Body.Close(); err != nil {
+						log.Printf("failed to close res.Body.Close: %v", err)
+					}
+				}()
 
-			assert.Equal(t, tt.wantStatusCode, res.StatusCode)
-			assert.Equal(t, tt.wantContent+"\n", string(respBody))
+				respBody, err := io.ReadAll(res.Body)
+				require.NoError(t, err)
+
+				assert.Equal(t, tt.wantStatusCode, res.StatusCode)
+				assert.Equal(t, tt.wantContent+"\n", string(respBody))
+			})
+
+			t.Run("gzip response", func(t *testing.T) {
+				var req *http.Request
+				var err error
+
+				if tt.name == "Test #3 invalid JSON input" {
+					req, err = http.NewRequest(tt.args.method, ts.URL+tt.args.url, bytes.NewBufferString(`{invalid_json}`))
+				} else {
+					req, err = http.NewRequest(tt.args.method, ts.URL+tt.args.url, bytes.NewBuffer(bodyBytes))
+				}
+				require.NoError(t, err)
+				req.Header.Set("Content-Type", "application/json")
+				req.Header.Set("Accept-Encoding", "gzip")
+
+				res, err := ts.Client().Do(req)
+				require.NoError(t, err)
+				defer func() {
+					if err := res.Body.Close(); err != nil {
+						log.Printf("failed to close res.Body.Close: %v", err)
+					}
+				}()
+
+				contentEncoding := res.Header.Get("Content-Encoding")
+				if contentEncoding != "gzip" {
+					t.Errorf("Expected 'gzip' in Content-Encoding header, but got '%s'", contentEncoding)
+				}
+
+				respBody, err := io.ReadAll(res.Body)
+				require.NoError(t, err)
+
+				assert.Equal(t, tt.wantStatusCode, res.StatusCode)
+				assert.Contains(t, string(respBody), tt.wantContent+"\n")
+			})
 		})
 	}
 }

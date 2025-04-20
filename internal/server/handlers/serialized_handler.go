@@ -5,7 +5,6 @@ import (
 	"github.com/a2sh3r/sysmetrics/internal/constants"
 	"github.com/a2sh3r/sysmetrics/internal/logger"
 	"github.com/a2sh3r/sysmetrics/internal/models"
-	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
 	"go.uber.org/zap"
 	"net/http"
 )
@@ -92,26 +91,4 @@ func (h *Handler) GetSerializedMetric(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		logger.Log.Error("Failed to encode response", zap.Error(err))
 	}
-}
-
-func convertMetricToModel(id string, metric interface{}) models.Metrics {
-	switch m := metric.(type) {
-	case repositories.Metric:
-		result := models.Metrics{
-			ID:    id,
-			MType: m.Type,
-		}
-		switch m.Type {
-		case constants.MetricTypeGauge:
-			if v, ok := m.Value.(float64); ok {
-				result.Value = &v
-			}
-		case constants.MetricTypeCounter:
-			if v, ok := m.Value.(int64); ok {
-				result.Delta = &v
-			}
-		}
-		return result
-	}
-	return models.Metrics{}
 }

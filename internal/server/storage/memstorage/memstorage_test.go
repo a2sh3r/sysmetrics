@@ -11,7 +11,6 @@ import (
 func TestMemStorage_GetMetric(t *testing.T) {
 	type fields struct {
 		metrics map[string]repositories.Metric
-		mu      *sync.RWMutex
 	}
 	type args struct {
 		name string
@@ -90,7 +89,6 @@ func TestMemStorage_GetMetric(t *testing.T) {
 func TestMemStorage_GetMetrics(t *testing.T) {
 	type fields struct {
 		metrics map[string]repositories.Metric
-		mu      *sync.RWMutex
 	}
 	tests := []struct {
 		name    string
@@ -140,7 +138,6 @@ func TestMemStorage_GetMetrics(t *testing.T) {
 func TestMemStorage_UpdateMetric(t *testing.T) {
 	type fields struct {
 		metrics map[string]repositories.Metric
-		mu      *sync.RWMutex
 	}
 	type args struct {
 		name   string
@@ -246,7 +243,6 @@ func TestMemStorage_UpdateMetric(t *testing.T) {
 func TestMemStorage_updateCounterMetric(t *testing.T) {
 	type fields struct {
 		metrics map[string]repositories.Metric
-		mu      *sync.RWMutex
 	}
 	type args struct {
 		existingMetric *repositories.Metric
@@ -329,7 +325,6 @@ func TestMemStorage_updateCounterMetric(t *testing.T) {
 func TestMemStorage_updateGaugeMetric(t *testing.T) {
 	type fields struct {
 		metrics map[string]repositories.Metric
-		mu      *sync.RWMutex
 	}
 	type args struct {
 		existingMetric *repositories.Metric

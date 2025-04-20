@@ -3,6 +3,9 @@ package handlers
 import (
 	"errors"
 	"fmt"
+	"github.com/a2sh3r/sysmetrics/internal/constants"
+	"github.com/a2sh3r/sysmetrics/internal/models"
+	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
 	"net/http"
 	"strings"
 	"time"
@@ -41,4 +44,26 @@ func formatMetric(metricName *string, value interface{}) (string, error) {
 
 func floatPointer(f float64) *float64 {
 	return &f
+}
+
+func convertMetricToModel(id string, metric interface{}) models.Metrics {
+	switch m := metric.(type) {
+	case repositories.Metric:
+		result := models.Metrics{
+			ID:    id,
+			MType: m.Type,
+		}
+		switch m.Type {
+		case constants.MetricTypeGauge:
+			if v, ok := m.Value.(float64); ok {
+				result.Value = &v
+			}
+		case constants.MetricTypeCounter:
+			if v, ok := m.Value.(int64); ok {
+				result.Delta = &v
+			}
+		}
+		return result
+	}
+	return models.Metrics{}
 }
