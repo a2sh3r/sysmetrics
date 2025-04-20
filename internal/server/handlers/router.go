@@ -23,7 +23,7 @@ func NewRouter(handler *Handler) chi.Router {
 		r.Post("/update/{metricType}/{metricName}/{metricValue}", handler.UpdateMetric)
 		r.Post("/update/", handler.UpdateSerializedMetric)
 		r.Get("/value/{metricType}/{metricName}", handler.GetMetric)
-		r.Get("/value/", handler.GetSerializedMetric)
+		r.Post("/value/", handler.GetSerializedMetric)
 	})
 
 	return r

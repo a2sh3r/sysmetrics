@@ -93,9 +93,11 @@ func TestHandler_UpdateSerializedMetric(t *testing.T) {
 
 			res, err := ts.Client().Do(req)
 			require.NoError(t, err)
-			defer func(Body io.ReadCloser) {
-				_ = Body.Close()
-			}(res.Body)
+			defer func() {
+				if err := res.Body.Close(); err != nil {
+					t.Errorf("failed to close response body: %v", err)
+				}
+			}()
 
 			respBody, err := io.ReadAll(res.Body)
 			require.NoError(t, err)
@@ -192,9 +194,11 @@ func TestHandler_GetSerializedMetric(t *testing.T) {
 
 			res, err := ts.Client().Do(req)
 			require.NoError(t, err)
-			defer func(Body io.ReadCloser) {
-				_ = Body.Close()
-			}(res.Body)
+			defer func() {
+				if err := res.Body.Close(); err != nil {
+					t.Errorf("failed to close response body: %v", err)
+				}
+			}()
 
 			respBody, err := io.ReadAll(res.Body)
 			require.NoError(t, err)
