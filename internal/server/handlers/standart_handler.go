@@ -94,8 +94,6 @@ func (h *Handler) GetMetrics(w http.ResponseWriter, r *http.Request) {
 		metricsBuffer.WriteString(metricString)
 	}
 
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-
 	if _, err := io.Copy(w, &metricsBuffer); err != nil {
 		http.Error(w, fmt.Sprintf("Failed to write body: %s", err), http.StatusInternalServerError)
 		logger.Log.Error("Failed to write response body", zap.Error(err))
@@ -165,8 +163,6 @@ func (h *Handler) UpdateMetric(w http.ResponseWriter, r *http.Request) {
 		logger.Log.Warn("Invalid metric type", zap.String("metricType", metricType))
 		return
 	}
-
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
 	msg := fmt.Sprintf("Metric %v is updated successfully with value %v", metricName, metricValue)
 	if _, err := io.WriteString(w, msg); err != nil {
