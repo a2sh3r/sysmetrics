@@ -3,13 +3,8 @@ package main
 import (
 	"github.com/a2sh3r/sysmetrics/internal/config"
 	"github.com/a2sh3r/sysmetrics/internal/logger"
-	"github.com/a2sh3r/sysmetrics/internal/server/handlers"
-	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
-	"github.com/a2sh3r/sysmetrics/internal/server/services"
-	"github.com/a2sh3r/sysmetrics/internal/server/storage/memstorage"
-	"go.uber.org/zap"
+	"github.com/a2sh3r/sysmetrics/internal/server/startup"
 	"log"
-	"net/http"
 )
 
 func main() {
@@ -18,26 +13,13 @@ func main() {
 		log.Printf("Error while creating new config: %v", err)
 		return
 	}
+	if err := logger.Initialize(cfg.LogLevel); err != nil {
+		log.Printf("Error while creating logger instance: %v", err)
+	}
 
 	cfg.ParseFlags()
 
-	if err := logger.Initialize(cfg.LogLevel); err != nil {
-		log.Fatalf("Logger init failed: %v", err)
-	}
-
-	memStorage := memstorage.NewMemStorage()
-
-	metricRepo := repositories.NewMetricRepo(memStorage)
-
-	metricService := services.NewService(metricRepo)
-
-	handler := handlers.NewHandler(metricService)
-
-	logger.Log.Info("Server is staring",
-		zap.String("address", cfg.Address),
-	)
-
-	if err := http.ListenAndServe(cfg.Address, handlers.NewRouter(handler)); err != nil {
-		panic(err)
+	if err := startup.RunServer(cfg); err != nil {
+		log.Fatalf("Server failed: %v", err)
 	}
 }

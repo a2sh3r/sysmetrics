@@ -12,8 +12,11 @@ type AgentConfig struct {
 }
 
 type ServerConfig struct {
-	Address  string `env:"ADDRESS" envDefault:"localhost:8080"`
-	LogLevel string `env:"LOG_LEVEL" envDefault:"info"`
+	Address         string `env:"ADDRESS" envDefault:"localhost:8080"`
+	LogLevel        string `env:"LOG_LEVEL" envDefault:"info"`
+	StoreInterval   int    `env:"STORE_INTERVAL" envDefault:"300"`
+	FileStoragePath string `env:"FILE_STORAGE_PATH" envDefault:"/tmp/metrics-db.json"`
+	Restore         bool   `env:"RESTORE" envDefault:"true"`
 }
 
 func NewAgentConfig() (*AgentConfig, error) {
