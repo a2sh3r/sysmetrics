@@ -2,11 +2,12 @@ package main
 
 import (
 	"context"
-	"github.com/a2sh3r/sysmetrics/internal/agent"
-	"github.com/a2sh3r/sysmetrics/internal/config"
 	"log"
 	"os/signal"
 	"syscall"
+
+	"github.com/a2sh3r/sysmetrics/internal/agent"
+	"github.com/a2sh3r/sysmetrics/internal/config"
 )
 
 func main() {

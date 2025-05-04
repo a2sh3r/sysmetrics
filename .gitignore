@@ -15,6 +15,7 @@
 cmd/agent/main
 cmd/agent/agent
 cmd/server/main
+cmd/server/metrics
 cmd/server/server
 
 # Dependency directories (remove the comment below to include it)
@@ -26,3 +27,6 @@ vendor/
 
 #cover.prof
 cover.prof
+
+Makefile
+
