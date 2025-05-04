@@ -18,10 +18,10 @@ import (
 )
 
 type RConfig struct {
-	Interval   int64
-	FilePath   string
-	memStorage *memstorage.MemStorage
-	mu         sync.Mutex
+	Interval int64
+	FilePath string
+	Storage  repositories.Storage
+	mu       sync.Mutex
 }
 
 type metricData struct {
@@ -31,11 +31,11 @@ type metricData struct {
 
 var ErrRestoreFromFile = errors.New("error restoring from file")
 
-func NewRestoreConfig(interval int64, filePath string, memStorage *memstorage.MemStorage) *RConfig {
+func NewRestoreConfig(interval int64, filePath string, storage repositories.Storage) *RConfig {
 	return &RConfig{
-		Interval:   interval,
-		FilePath:   filePath,
-		memStorage: memStorage,
+		Interval: interval,
+		FilePath: filePath,
+		Storage:  storage,
 	}
 }
 
@@ -73,7 +73,7 @@ func (b *RConfig) SaveToFile() error {
 		return err
 	}
 
-	metrics, err := b.memStorage.GetMetrics()
+	metrics, err := b.Storage.GetMetrics()
 	if err != nil {
 		return err
 	}

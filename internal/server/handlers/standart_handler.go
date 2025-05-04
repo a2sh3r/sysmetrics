@@ -178,3 +178,14 @@ func (h *Handler) UpdateMetric(w http.ResponseWriter, r *http.Request) {
 		zap.String("response_body", msg),
 	)
 }
+
+func (h *Handler) Ping(w http.ResponseWriter, r *http.Request) {
+	if h.DB != nil {
+		if err := h.DB.PingContext(r.Context()); err != nil {
+			http.Error(w, "database unavailable", http.StatusInternalServerError)
+			logger.Log.Error("database unavailable", zap.Error(err))
+			return
+		}
+	}
+	w.WriteHeader(http.StatusOK)
+}
