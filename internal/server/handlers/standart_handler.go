@@ -180,6 +180,11 @@ func (h *Handler) UpdateMetric(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Ping(w http.ResponseWriter, r *http.Request) {
+	if h.DB == nil {
+		http.Error(w, "database unavailable", http.StatusInternalServerError)
+		return
+	}
+
 	if err := h.DB.PingContext(r.Context()); err != nil {
 		http.Error(w, "database unavailable", http.StatusInternalServerError)
 		return
