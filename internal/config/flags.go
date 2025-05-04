@@ -69,12 +69,14 @@ func (cfg *ServerConfig) ParseFlags() {
 		storeInterval   int
 		fileStoragePath string
 		restore         bool
+		databaseDSN     string
 	)
 
 	flag.Var(addr, "a", "Net address host:port")
 	flag.IntVar(&storeInterval, "i", 300, "store interval in seconds")
 	flag.StringVar(&fileStoragePath, "f", "/tmp/metrics-db.json", "file path to store metrics")
 	flag.BoolVar(&restore, "r", true, "restore metrics on start")
+	flag.StringVar(&databaseDSN, "d", "", "Database DSN")
 
 	flag.Parse()
 
@@ -104,5 +106,11 @@ func (cfg *ServerConfig) ParseFlags() {
 		}
 	} else {
 		cfg.Restore = restore
+	}
+
+	if databaseDSN != "" {
+		cfg.DatabaseDSN = databaseDSN
+	} else if envValue, exists := os.LookupEnv("DATABASE_DSN"); exists {
+		cfg.DatabaseDSN = envValue
 	}
 }
