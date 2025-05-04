@@ -12,7 +12,6 @@ import (
 	"github.com/a2sh3r/sysmetrics/internal/server/services"
 	"github.com/a2sh3r/sysmetrics/internal/server/storage/memstorage"
 	"go.uber.org/zap"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -39,10 +38,10 @@ func RunServer(cfg *config.ServerConfig) error {
 
 	db, err := database.InitDB(cfg)
 	if err != nil {
-		log.Fatalf("Database connection failed: %v", err)
-		return err
+		logger.Log.Error("Database connection failed", zap.Error(err))
+	} else {
+		defer database.CloseDB(db)
 	}
-	defer database.CloseDB(db)
 
 	metricRepo := repositories.NewMetricRepo(memStorage)
 	metricService := services.NewService(metricRepo)
