@@ -9,6 +9,7 @@ type MetricRepository interface {
 	SaveMetric(metricName string, metricValue interface{}, metricType string) error
 	GetMetric(metricName string) (repositories.Metric, error)
 	GetMetrics() (map[string]repositories.Metric, error)
+	UpdateMetricsBatch(metrics map[string]repositories.Metric) error
 }
 
 type Service struct {
@@ -33,4 +34,8 @@ func (s *Service) GetMetric(metricName string) (repositories.Metric, error) {
 
 func (s *Service) GetMetrics() (map[string]repositories.Metric, error) {
 	return s.repo.GetMetrics()
+}
+
+func (s *Service) UpdateMetricsBatch(metrics map[string]repositories.Metric) error {
+	return s.repo.UpdateMetricsBatch(metrics)
 }

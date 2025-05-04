@@ -32,27 +32,30 @@ func NewDBStorage(db *sql.DB) (*DBStorage, error) {
 }
 
 func (s *DBStorage) UpdateMetric(name string, metric repositories.Metric) error {
-	query := `
-		INSERT INTO metrics (id, type, delta, value)
-		VALUES ($1, $2, $3, $4)
-		ON CONFLICT (id) DO UPDATE 
-		SET delta = EXCLUDED.delta, value = EXCLUDED.value`
-	var delta sql.NullInt64
-	var value sql.NullFloat64
-
 	switch metric.Type {
 	case "gauge":
-		value = sql.NullFloat64{Float64: metric.Value.(float64), Valid: true}
-		delta = sql.NullInt64{}
+		query := `
+			INSERT INTO metrics (id, type, delta, value)
+			VALUES ($1, 'gauge', NULL, $2)
+			ON CONFLICT (id) DO UPDATE 
+			SET delta = NULL,
+				value = $2`
+		value := metric.Value.(float64)
+		_, err := s.db.ExecContext(context.Background(), query, name, value)
+		return err
 	case "counter":
-		delta = sql.NullInt64{Int64: metric.Value.(int64), Valid: true}
-		value = sql.NullFloat64{}
+		query := `
+			INSERT INTO metrics (id, type, delta, value)
+			VALUES ($1, 'counter', $2, NULL)
+			ON CONFLICT (id) DO UPDATE 
+			SET delta = COALESCE(metrics.delta, 0) + $2,
+				value = NULL`
+		delta := metric.Value.(int64)
+		_, err := s.db.ExecContext(context.Background(), query, name, delta)
+		return err
 	default:
 		return fmt.Errorf("unknown metric type: %s", metric.Type)
 	}
-
-	_, err := s.db.ExecContext(context.Background(), query, name, metric.Type, delta, value)
-	return err
 }
 
 func (s *DBStorage) GetMetric(name string) (repositories.Metric, error) {
@@ -121,4 +124,84 @@ func (s *DBStorage) GetMetrics() (map[string]repositories.Metric, error) {
 	}
 
 	return metrics, nil
+}
+
+func (s *DBStorage) UpdateMetricsBatch(metrics map[string]repositories.Metric) error {
+	if len(metrics) == 0 {
+		return nil
+	}
+
+	tx, err := s.db.BeginTx(context.Background(), nil)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer func() {
+		if err != nil {
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				logger.Log.Error("Failed to rollback transaction", zap.Error(rollbackErr))
+			}
+		}
+	}()
+
+	counterQuery := `
+		INSERT INTO metrics (id, type, delta, value)
+		VALUES ($1, 'counter', $2, NULL)
+		ON CONFLICT (id) DO UPDATE 
+		SET delta = CASE 
+			WHEN metrics.type = 'counter' THEN COALESCE(metrics.delta, 0) + EXCLUDED.delta
+			ELSE EXCLUDED.delta
+		END,
+		value = NULL`
+
+	gaugeQuery := `
+		INSERT INTO metrics (id, type, delta, value)
+		VALUES ($1, 'gauge', NULL, $2)
+		ON CONFLICT (id) DO UPDATE 
+		SET delta = NULL,
+			value = $2`
+
+	counterStmt, err := tx.PrepareContext(context.Background(), counterQuery)
+	if err != nil {
+		return fmt.Errorf("failed to prepare counter statement: %w", err)
+	}
+	defer func(stmt *sql.Stmt) {
+		err := stmt.Close()
+		if err != nil {
+			logger.Log.Error("unable to close counter stmt", zap.Error(err))
+		}
+	}(counterStmt)
+
+	gaugeStmt, err := tx.PrepareContext(context.Background(), gaugeQuery)
+	if err != nil {
+		return fmt.Errorf("failed to prepare gauge statement: %w", err)
+	}
+	defer func(stmt *sql.Stmt) {
+		err := stmt.Close()
+		if err != nil {
+			logger.Log.Error("unable to close gauge stmt", zap.Error(err))
+		}
+	}(gaugeStmt)
+
+	for id, metric := range metrics {
+		switch metric.Type {
+		case "gauge":
+			value := metric.Value.(float64)
+			if _, err := gaugeStmt.ExecContext(context.Background(), id, value); err != nil {
+				return fmt.Errorf("failed to execute gauge statement for metric %s: %w", id, err)
+			}
+		case "counter":
+			delta := metric.Value.(int64)
+			if _, err := counterStmt.ExecContext(context.Background(), id, delta); err != nil {
+				return fmt.Errorf("failed to execute counter statement for metric %s: %w", id, err)
+			}
+		default:
+			return fmt.Errorf("unknown metric type: %s", metric.Type)
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return nil
 }

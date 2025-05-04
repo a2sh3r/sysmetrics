@@ -13,6 +13,7 @@ type ReaderServiceInterface interface {
 type WriterServiceInterface interface {
 	UpdateGaugeMetric(name string, value float64) error
 	UpdateCounterMetric(name string, value int64) error
+	UpdateMetricsBatch(metrics map[string]repositories.Metric) error
 }
 
 type Handler struct {

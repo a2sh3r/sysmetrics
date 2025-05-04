@@ -60,10 +60,10 @@ func toModelMetrics(m *metrics.Metrics) []*models.Metrics {
 	return result
 }
 
-func (s *Sender) sendMetricJSON(metric *models.Metrics) error {
-	data, err := json.Marshal(metric)
+func (s *Sender) sendMetricsBatchJSON(metrics []*models.Metrics) error {
+	data, err := json.Marshal(metrics)
 	if err != nil {
-		return fmt.Errorf("failed to marshal metric %s: %w", metric.ID, err)
+		return fmt.Errorf("failed to marshal metrics batch: %w", err)
 	}
 
 	compressedData, err := utils.CompressData(data)
@@ -71,7 +71,7 @@ func (s *Sender) sendMetricJSON(metric *models.Metrics) error {
 		return fmt.Errorf("failed to compress data: %w", err)
 	}
 
-	url := s.serverAddress + "/update/"
+	url := s.serverAddress + "/updates/"
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(compressedData))
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
@@ -99,7 +99,7 @@ func (s *Sender) sendMetricJSON(metric *models.Metrics) error {
 	log.Printf("Server response (status %d): %s", resp.StatusCode, string(body))
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("server returned status %d for metric %s", resp.StatusCode, metric.ID)
+		return fmt.Errorf("server returned status %d for metrics batch", resp.StatusCode)
 	}
 
 	return nil
@@ -114,18 +114,14 @@ func (s *Sender) SendMetrics(metricsBatch []*metrics.Metrics) error {
 		return fmt.Errorf("metricsBatch is empty")
 	}
 
+	var allModelMetrics []*models.Metrics
 	for _, m := range metricsBatch {
 		if m == nil {
 			return fmt.Errorf("metric is nil")
 		}
 		modelMetrics := toModelMetrics(m)
-		for _, metric := range modelMetrics {
-			err := s.sendMetricJSON(metric)
-			if err != nil {
-				return fmt.Errorf("failed to send metric %s: %w", metric.ID, err)
-			}
-		}
+		allModelMetrics = append(allModelMetrics, modelMetrics...)
 	}
 
-	return nil
+	return s.sendMetricsBatchJSON(allModelMetrics)
 }

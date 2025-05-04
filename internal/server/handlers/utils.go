@@ -42,10 +42,6 @@ func formatMetric(metricName *string, value interface{}) (string, error) {
 	}
 }
 
-func floatPointer(f float64) *float64 {
-	return &f
-}
-
 func convertMetricToModel(id string, metric interface{}) models.Metrics {
 	switch m := metric.(type) {
 	case repositories.Metric:

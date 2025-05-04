@@ -5,6 +5,7 @@ import (
 	"github.com/a2sh3r/sysmetrics/internal/constants"
 	"github.com/a2sh3r/sysmetrics/internal/logger"
 	"github.com/a2sh3r/sysmetrics/internal/models"
+	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
 	"go.uber.org/zap"
 	"net/http"
 )
@@ -91,4 +92,56 @@ func (h *Handler) GetSerializedMetric(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		logger.Log.Error("Failed to encode response", zap.Error(err))
 	}
+}
+
+func (h *Handler) UpdateSerializedMetrics(w http.ResponseWriter, r *http.Request) {
+	var metrics []models.Metrics
+	if err := json.NewDecoder(r.Body).Decode(&metrics); err != nil {
+		logger.Log.Warn("Failed to decode JSON for batch update", zap.Error(err))
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	if len(metrics) == 0 {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	repoMetrics := make(map[string]repositories.Metric)
+	for _, m := range metrics {
+		switch m.MType {
+		case constants.MetricTypeGauge:
+			if m.Value == nil {
+				logger.Log.Warn("Missing value for gauge", zap.String("metric_id", m.ID))
+				http.Error(w, "Missing gauge value", http.StatusBadRequest)
+				return
+			}
+			repoMetrics[m.ID] = repositories.Metric{
+				Type:  constants.MetricTypeGauge,
+				Value: *m.Value,
+			}
+		case constants.MetricTypeCounter:
+			if m.Delta == nil {
+				logger.Log.Warn("Missing delta for counter", zap.String("metric_id", m.ID))
+				http.Error(w, "Missing counter delta", http.StatusBadRequest)
+				return
+			}
+			repoMetrics[m.ID] = repositories.Metric{
+				Type:  constants.MetricTypeCounter,
+				Value: *m.Delta,
+			}
+		default:
+			logger.Log.Warn("Unsupported metric type", zap.String("type", m.MType))
+			http.Error(w, "Unknown metric type", http.StatusNotImplemented)
+			return
+		}
+	}
+
+	if err := h.writer.UpdateMetricsBatch(repoMetrics); err != nil {
+		logger.Log.Error("Failed to update metrics batch", zap.Error(err))
+		http.Error(w, "Failed to update metrics", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
