@@ -115,5 +115,10 @@ func (s *DBStorage) GetMetrics() (map[string]repositories.Metric, error) {
 
 		metrics[id] = repositories.Metric{Type: metricType, Value: val}
 	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error occurred during rows iteration: %w", err)
+	}
+
 	return metrics, nil
 }

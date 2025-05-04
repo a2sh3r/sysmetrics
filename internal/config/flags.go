@@ -113,4 +113,14 @@ func (cfg *ServerConfig) ParseFlags() {
 	} else if envValue, exists := os.LookupEnv("DATABASE_DSN"); exists {
 		cfg.DatabaseDSN = envValue
 	}
+
+	if cfg.DatabaseDSN != "" && !strings.Contains(cfg.DatabaseDSN, "host=") {
+		if strings.HasPrefix(cfg.DatabaseDSN, "postgres://") {
+			if strings.HasPrefix(cfg.DatabaseDSN, "postgres:///") {
+				cfg.DatabaseDSN = strings.Replace(cfg.DatabaseDSN, "postgres:///", "postgres://localhost/", 1)
+			}
+		} else {
+			cfg.DatabaseDSN = "host=localhost " + cfg.DatabaseDSN
+		}
+	}
 }
