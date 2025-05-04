@@ -2,6 +2,7 @@ package startup
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"github.com/a2sh3r/sysmetrics/internal/config"
 	"github.com/a2sh3r/sysmetrics/internal/logger"
@@ -10,6 +11,7 @@ import (
 	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
 	"github.com/a2sh3r/sysmetrics/internal/server/restore"
 	"github.com/a2sh3r/sysmetrics/internal/server/services"
+	"github.com/a2sh3r/sysmetrics/internal/server/storage/dbstorage"
 	"github.com/a2sh3r/sysmetrics/internal/server/storage/memstorage"
 	"go.uber.org/zap"
 	"net/http"
@@ -21,33 +23,43 @@ import (
 
 func RunServer(cfg *config.ServerConfig) error {
 
-	var memStorage *memstorage.MemStorage
+	var storage repositories.Storage
 	var err error
+	var db *sql.DB
 
-	if cfg.Restore {
-		memStorage, err = restore.RestoreFromFile(cfg.FileStoragePath)
+	if cfg.DatabaseDSN != "" {
+		db, err := database.InitDB(cfg)
 		if err != nil {
-			logger.Log.Info("Failed to restore metrics from file, using empty storage",
-				zap.Error(err),
-				zap.String("file", cfg.FileStoragePath))
-			memStorage = memstorage.NewMemStorage()
+			logger.Log.Error("Database connection failed", zap.Error(err))
+			return err
+		}
+		defer database.CloseDB(db)
+		storage, err = dbstorage.NewDBStorage(db)
+		if err != nil {
+			logger.Log.Error("Failed to initialize DBStorage", zap.Error(err))
+			return err
 		}
 	} else {
-		memStorage = memstorage.NewMemStorage()
+		var memStorage *memstorage.MemStorage
+		if cfg.Restore {
+			memStorage, err = restore.RestoreFromFile(cfg.FileStoragePath)
+			if err != nil {
+				logger.Log.Info("Failed to restore metrics from file, using empty storage",
+					zap.Error(err),
+					zap.String("file", cfg.FileStoragePath))
+				memStorage = memstorage.NewMemStorage()
+			}
+		} else {
+			memStorage = memstorage.NewMemStorage()
+		}
+		storage = memStorage
 	}
 
-	db, err := database.InitDB(cfg)
-	if err != nil {
-		logger.Log.Error("Database connection failed", zap.Error(err))
-	} else {
-		defer database.CloseDB(db)
-	}
-
-	metricRepo := repositories.NewMetricRepo(memStorage)
+	metricRepo := repositories.NewMetricRepo(storage)
 	metricService := services.NewService(metricRepo)
 	handler := handlers.NewHandler(metricService, metricService, db)
 
-	restoreConfig := restore.NewRestoreConfig(int64(cfg.StoreInterval), cfg.FileStoragePath, memStorage)
+	restoreConfig := restore.NewRestoreConfig(int64(cfg.StoreInterval), cfg.FileStoragePath, storage)
 
 	if cfg.StoreInterval != 0 {
 		go func() {
