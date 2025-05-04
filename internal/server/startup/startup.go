@@ -5,12 +5,14 @@ import (
 	"errors"
 	"github.com/a2sh3r/sysmetrics/internal/config"
 	"github.com/a2sh3r/sysmetrics/internal/logger"
+	"github.com/a2sh3r/sysmetrics/internal/server/database"
 	"github.com/a2sh3r/sysmetrics/internal/server/handlers"
 	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
 	"github.com/a2sh3r/sysmetrics/internal/server/restore"
 	"github.com/a2sh3r/sysmetrics/internal/server/services"
 	"github.com/a2sh3r/sysmetrics/internal/server/storage/memstorage"
 	"go.uber.org/zap"
+	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -35,9 +37,16 @@ func RunServer(cfg *config.ServerConfig) error {
 		memStorage = memstorage.NewMemStorage()
 	}
 
+	db, err := database.InitDB(cfg)
+	if err != nil {
+		log.Fatalf("Database connection failed: %v", err)
+		return err
+	}
+	defer database.CloseDB(db)
+
 	metricRepo := repositories.NewMetricRepo(memStorage)
 	metricService := services.NewService(metricRepo)
-	handler := handlers.NewHandler(metricService, metricService)
+	handler := handlers.NewHandler(metricService, metricService, db)
 
 	restoreConfig := restore.NewRestoreConfig(int64(cfg.StoreInterval), cfg.FileStoragePath, memStorage)
 

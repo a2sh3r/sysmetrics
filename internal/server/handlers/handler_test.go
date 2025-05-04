@@ -31,7 +31,7 @@ func TestNewHandler(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := NewHandler(tt.args.service, tt.args.service)
+			got := NewHandler(tt.args.service, tt.args.service, nil)
 			assert.NotNil(t, got)
 			assert.Equal(t, got, tt.want)
 		})

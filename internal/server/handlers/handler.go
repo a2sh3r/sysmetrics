@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"database/sql"
 	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
 )
 
@@ -17,11 +18,13 @@ type WriterServiceInterface interface {
 type Handler struct {
 	reader ReaderServiceInterface
 	writer WriterServiceInterface
+	DB     *sql.DB
 }
 
-func NewHandler(reader ReaderServiceInterface, writer WriterServiceInterface) *Handler {
+func NewHandler(reader ReaderServiceInterface, writer WriterServiceInterface, db *sql.DB) *Handler {
 	return &Handler{
 		reader: reader,
 		writer: writer,
+		DB:     db,
 	}
 }

@@ -25,6 +25,7 @@ func NewRouter(handler *Handler) chi.Router {
 		r.Post("/update/", handler.UpdateSerializedMetric)
 		r.Get("/value/{metricType}/{metricName}", handler.GetMetric)
 		r.Post("/value/", handler.GetSerializedMetric)
+		r.Get("/ping", handler.Ping)
 	})
 
 	return r
