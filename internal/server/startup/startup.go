@@ -37,7 +37,7 @@ func RunServer(cfg *config.ServerConfig) error {
 
 	metricRepo := repositories.NewMetricRepo(memStorage)
 	metricService := services.NewService(metricRepo)
-	handler := handlers.NewHandler(metricService)
+	handler := handlers.NewHandler(metricService, metricService)
 
 	restoreConfig := restore.NewRestoreConfig(int64(cfg.StoreInterval), cfg.FileStoragePath, memStorage)
 
