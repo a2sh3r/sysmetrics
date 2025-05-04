@@ -23,18 +23,21 @@ func TestHandler_UpdateSerializedMetric(t *testing.T) {
 		method string
 		url    string
 	}
+	sharedRepo := &mockRepo{
+		metrics: make(map[string]repositories.Metric),
+	}
 	tests := []struct {
-		name           string
-		mockService    ServiceInterface
-		args           args
-		wantStatusCode int
-		wantContent    string
+		name              string
+		mockReaderService ReaderServiceInterface
+		mockWriterService WriterServiceInterface
+		args              args
+		wantStatusCode    int
+		wantContent       string
 	}{
 		{
-			name: "Test #1 valid gauge metric update",
-			mockService: services.NewService(&mockRepo{
-				metrics: make(map[string]repositories.Metric),
-			}),
+			name:              "Test #1 valid gauge metric update",
+			mockReaderService: services.NewService(sharedRepo),
+			mockWriterService: services.NewService(sharedRepo),
 			args: args{
 				method: http.MethodPost,
 				url:    "/update/",
@@ -48,10 +51,9 @@ func TestHandler_UpdateSerializedMetric(t *testing.T) {
 			wantContent:    `{"id":"gauge_metric","type":"gauge","value":123.12}`,
 		},
 		{
-			name: "Test #2 missing gauge value",
-			mockService: services.NewService(&mockRepo{
-				metrics: make(map[string]repositories.Metric),
-			}),
+			name:              "Test #2 missing gauge value",
+			mockReaderService: services.NewService(sharedRepo),
+			mockWriterService: services.NewService(sharedRepo),
 			args: args{
 				method: http.MethodPost,
 				url:    "/update/",
@@ -64,10 +66,9 @@ func TestHandler_UpdateSerializedMetric(t *testing.T) {
 			wantContent:    "Missing gauge value",
 		},
 		{
-			name: "Test #3 unsupported metric type",
-			mockService: services.NewService(&mockRepo{
-				metrics: make(map[string]repositories.Metric),
-			}),
+			name:              "Test #3 unsupported metric type",
+			mockReaderService: services.NewService(sharedRepo),
+			mockWriterService: services.NewService(sharedRepo),
 			args: args{
 				method: http.MethodPost,
 				url:    "/update/",
@@ -82,7 +83,7 @@ func TestHandler_UpdateSerializedMetric(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := &Handler{service: tt.mockService}
+			h := &Handler{reader: tt.mockReaderService, writer: tt.mockWriterService}
 			ts := httptest.NewServer(middleware.NewGzipMiddleware()(NewRouter(h)))
 			defer ts.Close()
 
@@ -147,15 +148,24 @@ func TestHandler_GetSerializedMetric(t *testing.T) {
 		url    string
 	}
 	tests := []struct {
-		name           string
-		mockService    ServiceInterface
-		args           args
-		wantStatusCode int
-		wantContent    string
+		name              string
+		mockReaderService ReaderServiceInterface
+		mockWriterService WriterServiceInterface
+		args              args
+		wantStatusCode    int
+		wantContent       string
 	}{
 		{
 			name: "Test #1 valid counter metric fetch",
-			mockService: services.NewService(&mockRepo{
+			mockReaderService: services.NewService(&mockRepo{
+				metrics: map[string]repositories.Metric{
+					"counter_metric": {
+						Type:  constants.MetricTypeCounter,
+						Value: int64(10),
+					},
+				},
+			}),
+			mockWriterService: services.NewService(&mockRepo{
 				metrics: map[string]repositories.Metric{
 					"counter_metric": {
 						Type:  constants.MetricTypeCounter,
@@ -176,7 +186,10 @@ func TestHandler_GetSerializedMetric(t *testing.T) {
 		},
 		{
 			name: "Test #2 metric not found",
-			mockService: services.NewService(&mockRepo{
+			mockReaderService: services.NewService(&mockRepo{
+				metrics: map[string]repositories.Metric{},
+			}),
+			mockWriterService: services.NewService(&mockRepo{
 				metrics: map[string]repositories.Metric{},
 			}),
 			args: args{
@@ -192,7 +205,10 @@ func TestHandler_GetSerializedMetric(t *testing.T) {
 		},
 		{
 			name: "Test #3 invalid JSON input",
-			mockService: services.NewService(&mockRepo{
+			mockReaderService: services.NewService(&mockRepo{
+				metrics: map[string]repositories.Metric{},
+			}),
+			mockWriterService: services.NewService(&mockRepo{
 				metrics: map[string]repositories.Metric{},
 			}),
 			args: args{
@@ -206,7 +222,7 @@ func TestHandler_GetSerializedMetric(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := &Handler{service: tt.mockService}
+			h := &Handler{reader: tt.mockReaderService, writer: tt.mockWriterService}
 			ts := httptest.NewServer(middleware.NewGzipMiddleware()(NewRouter(h)))
 			defer ts.Close()
 

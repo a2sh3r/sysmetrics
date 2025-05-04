@@ -161,7 +161,8 @@ func TestHandler_GetMetric(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			h := &Handler{
-				service: tt.fields.service,
+				reader: tt.fields.service,
+				writer: tt.fields.service,
 			}
 
 			ts := httptest.NewServer(NewRouter(h))
@@ -265,7 +266,8 @@ func TestHandler_GetMetrics(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			h := &Handler{
-				service: tt.fields.service,
+				reader: tt.fields.service,
+				writer: tt.fields.service,
 			}
 
 			ts := httptest.NewServer(NewRouter(h))
@@ -411,7 +413,8 @@ func TestHandler_UpdateMetric(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			h := &Handler{
-				service: tt.fields.service,
+				reader: tt.fields.service,
+				writer: tt.fields.service,
 			}
 
 			ts := httptest.NewServer(NewRouter(h))

@@ -30,7 +30,7 @@ func (h *Handler) GetMetric(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	responseMetric, err := h.service.GetMetric(metricName)
+	responseMetric, err := h.reader.GetMetric(metricName)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to get metric: %s", err), http.StatusNotFound)
 		logger.Log.Warn("Metric not found", zap.Error(err), zap.String("metricName", metricName))
@@ -76,7 +76,7 @@ func (h *Handler) GetMetrics(w http.ResponseWriter, r *http.Request) {
 
 	setHeaders(w)
 
-	responseMetrics, err := h.service.GetMetrics()
+	responseMetrics, err := h.reader.GetMetrics()
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to get metrics: %s", err), http.StatusInternalServerError)
 		logger.Log.Error("Failed to get metrics", zap.Error(err))
@@ -141,7 +141,7 @@ func (h *Handler) UpdateMetric(w http.ResponseWriter, r *http.Request) {
 			logger.Log.Warn("Failed to parse gauge value", zap.Error(err), zap.String("metricValue", metricValue))
 			return
 		}
-		if err := h.service.UpdateGaugeMetric(metricName, value); err != nil {
+		if err := h.writer.UpdateGaugeMetric(metricName, value); err != nil {
 			http.Error(w, fmt.Sprintf("Failed to update metric: %s", err), http.StatusInternalServerError)
 			logger.Log.Error("Failed to update gauge metric", zap.Error(err), zap.String("metricName", metricName))
 			return
@@ -153,7 +153,7 @@ func (h *Handler) UpdateMetric(w http.ResponseWriter, r *http.Request) {
 			logger.Log.Warn("Failed to parse counter value", zap.Error(err), zap.String("metricValue", metricValue))
 			return
 		}
-		if err := h.service.UpdateCounterMetric(metricName, value); err != nil {
+		if err := h.writer.UpdateCounterMetric(metricName, value); err != nil {
 			http.Error(w, fmt.Sprintf("Failed to update metric: %s", err), http.StatusInternalServerError)
 			logger.Log.Error("Failed to update counter metric", zap.Error(err), zap.String("metricName", metricName))
 			return

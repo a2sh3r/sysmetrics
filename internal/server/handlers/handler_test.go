@@ -24,13 +24,14 @@ func TestNewHandler(t *testing.T) {
 				service: services.NewService(&mockRepo{}),
 			},
 			want: &Handler{
-				service: services.NewService(&mockRepo{}),
+				reader: services.NewService(&mockRepo{}),
+				writer: services.NewService(&mockRepo{}),
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := NewHandler(tt.args.service)
+			got := NewHandler(tt.args.service, tt.args.service)
 			assert.NotNil(t, got)
 			assert.Equal(t, got, tt.want)
 		})
