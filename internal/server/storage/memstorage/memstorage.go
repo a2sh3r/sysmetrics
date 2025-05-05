@@ -147,10 +147,53 @@ func (ms *MemStorage) UpdateMetricsBatch(metrics map[string]repositories.Metric)
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 
+	if ms.metrics == nil {
+		return ErrMetricsMapNil
+	}
+
 	for name, metric := range metrics {
-		if err := ms.UpdateMetric(name, metric); err != nil {
-			return fmt.Errorf("failed to update metric %s: %w", name, err)
+		if name == "" {
+			return ErrMetricInvalidName
 		}
+
+		if metric.Type != constants.MetricTypeCounter && metric.Type != constants.MetricTypeGauge {
+			return ErrMetricInvalidType
+		}
+
+		existingMetric, exists := ms.metrics[name]
+
+		if !exists {
+			ms.metrics[name] = metric
+			continue
+		}
+
+		if existingMetric.Type != metric.Type {
+			return ErrMetricInvalidType
+		}
+
+		switch metric.Type {
+		case constants.MetricTypeCounter:
+			newValue, ok := metric.Value.(int64)
+			if !ok {
+				return ErrMetricInvalidType
+			}
+
+			existingValue, ok := existingMetric.Value.(int64)
+			if !ok {
+				existingValue = 0
+			}
+
+			existingMetric.Value = existingValue + newValue
+		case constants.MetricTypeGauge:
+			newValue, ok := metric.Value.(float64)
+			if !ok {
+				return fmt.Errorf("invalid gauge value type: %T", metric.Value)
+			}
+			existingMetric.Value = newValue
+		default:
+			return ErrMetricInvalidType
+		}
+		ms.metrics[name] = existingMetric
 	}
 
 	return nil
