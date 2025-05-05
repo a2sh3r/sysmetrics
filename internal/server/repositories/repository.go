@@ -4,6 +4,7 @@ type Storage interface {
 	UpdateMetric(metricName string, metric Metric) error
 	GetMetric(metricName string) (Metric, error)
 	GetMetrics() (map[string]Metric, error)
+	UpdateMetricsBatch(metrics map[string]Metric) error
 }
 
 type Metric struct {

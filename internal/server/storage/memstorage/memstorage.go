@@ -143,3 +143,20 @@ func (ms *MemStorage) updateGaugeMetric(existingMetric *repositories.Metric, new
 	existingMetric.Value = newValue
 	return nil
 }
+
+func (ms *MemStorage) UpdateMetricsBatch(metrics map[string]repositories.Metric) error {
+	if ms == nil {
+		return fmt.Errorf("storage is nil")
+	}
+
+	ms.mu.Lock()
+	defer ms.mu.Unlock()
+
+	for name, metric := range metrics {
+		if err := ms.UpdateMetric(name, metric); err != nil {
+			return fmt.Errorf("failed to update metric %s: %w", name, err)
+		}
+	}
+
+	return nil
+}

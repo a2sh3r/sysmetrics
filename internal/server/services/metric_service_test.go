@@ -281,3 +281,10 @@ func (m *mockRepo) SaveMetric(name string, value interface{}, metricType string)
 	}
 	return nil
 }
+
+func (m *mockRepo) UpdateMetricsBatch(metrics map[string]repositories.Metric) error {
+	if m.errOnUpdate {
+		return fmt.Errorf("mock update error with %v", metrics)
+	}
+	return nil
+}

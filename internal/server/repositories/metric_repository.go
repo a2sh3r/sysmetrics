@@ -19,3 +19,7 @@ func (r *MetricRepo) GetMetric(metricName string) (Metric, error) {
 func (r *MetricRepo) GetMetrics() (map[string]Metric, error) {
 	return r.storage.GetMetrics()
 }
+
+func (r *MetricRepo) UpdateMetricsBatch(metrics map[string]Metric) error {
+	return r.storage.UpdateMetricsBatch(metrics)
+}
