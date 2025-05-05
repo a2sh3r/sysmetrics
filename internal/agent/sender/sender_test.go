@@ -58,8 +58,8 @@ func TestSender_SendMetrics(t *testing.T) {
 				if r.Method != http.MethodPost {
 					t.Errorf("expected POST method, got %s", r.Method)
 				}
-				if r.URL.Path != "/updates/" {
-					t.Errorf("expected path /updates/, got %s", r.URL.Path)
+				if r.URL.Path != "/update/" {
+					t.Errorf("expected path /update/, got %s", r.URL.Path)
 				}
 				w.WriteHeader(http.StatusOK)
 			}))
