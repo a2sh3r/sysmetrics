@@ -48,7 +48,7 @@ func (s *DBStorage) UpdateMetric(name string, metric repositories.Metric) error 
 			INSERT INTO metrics (id, type, delta, value)
 			VALUES ($1, 'counter', $2, NULL)
 			ON CONFLICT (id) DO UPDATE 
-			SET delta = COALESCE(metrics.delta, 0) + $2,
+			SET delta = $2,
 				value = NULL`
 		delta := metric.Value.(int64)
 		_, err := s.db.ExecContext(context.Background(), query, name, delta)
@@ -147,10 +147,7 @@ func (s *DBStorage) UpdateMetricsBatch(metrics map[string]repositories.Metric) e
 		INSERT INTO metrics (id, type, delta, value)
 		VALUES ($1, 'counter', $2, NULL)
 		ON CONFLICT (id) DO UPDATE 
-		SET delta = CASE 
-			WHEN metrics.type = 'counter' THEN COALESCE(metrics.delta, 0) + EXCLUDED.delta
-			ELSE EXCLUDED.delta
-		END,
+		SET delta = $2,
 		value = NULL`
 
 	gaugeQuery := `

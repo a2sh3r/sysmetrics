@@ -126,9 +126,16 @@ func (h *Handler) UpdateSerializedMetrics(w http.ResponseWriter, r *http.Request
 				http.Error(w, "Missing counter delta", http.StatusBadRequest)
 				return
 			}
-			repoMetrics[m.ID] = repositories.Metric{
-				Type:  constants.MetricTypeCounter,
-				Value: *m.Delta,
+			if existing, ok := repoMetrics[m.ID]; ok && existing.Type == constants.MetricTypeCounter {
+				repoMetrics[m.ID] = repositories.Metric{
+					Type:  constants.MetricTypeCounter,
+					Value: existing.Value.(int64) + *m.Delta,
+				}
+			} else {
+				repoMetrics[m.ID] = repositories.Metric{
+					Type:  constants.MetricTypeCounter,
+					Value: *m.Delta,
+				}
 			}
 		default:
 			logger.Log.Warn("Unsupported metric type", zap.String("type", m.MType))
