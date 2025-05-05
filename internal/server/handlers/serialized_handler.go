@@ -26,7 +26,7 @@ func (h *Handler) UpdateSerializedMetric(w http.ResponseWriter, r *http.Request)
 			http.Error(w, "Missing gauge value", http.StatusBadRequest)
 			return
 		}
-		if err := h.writer.UpdateGaugeMetric(m.ID, *m.Value); err != nil {
+		if err := h.writer.UpdateGaugeMetricWithRetry(m.ID, *m.Value); err != nil {
 			logger.Log.Error("Failed to update gauge", zap.String("metric_id", m.ID), zap.Error(err))
 			http.Error(w, "Failed to update gauge", http.StatusInternalServerError)
 			return
@@ -37,7 +37,7 @@ func (h *Handler) UpdateSerializedMetric(w http.ResponseWriter, r *http.Request)
 			http.Error(w, "Missing counter delta", http.StatusBadRequest)
 			return
 		}
-		if err := h.writer.UpdateCounterMetric(m.ID, *m.Delta); err != nil {
+		if err := h.writer.UpdateCounterMetricWithRetry(m.ID, *m.Delta); err != nil {
 			logger.Log.Error("Failed to update counter", zap.String("metric_id", m.ID), zap.Error(err))
 			http.Error(w, "Failed to update counter", http.StatusInternalServerError)
 			return
@@ -48,7 +48,7 @@ func (h *Handler) UpdateSerializedMetric(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	updated, err := h.reader.GetMetric(m.ID)
+	updated, err := h.reader.GetMetricWithRetry(m.ID)
 	if err != nil {
 		logger.Log.Error("Metric not found after update", zap.String("metric_id", m.ID), zap.Error(err))
 		http.Error(w, "Metric not found after update", http.StatusNotFound)
@@ -77,7 +77,7 @@ func (h *Handler) GetSerializedMetric(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	stored, err := h.reader.GetMetric(m.ID)
+	stored, err := h.reader.GetMetricWithRetry(m.ID)
 	if err != nil {
 		logger.Log.Warn("Metric not found", zap.String("metric_id", m.ID), zap.Error(err))
 		http.Error(w, "Metric not found", http.StatusNotFound)
@@ -144,7 +144,7 @@ func (h *Handler) UpdateSerializedMetrics(w http.ResponseWriter, r *http.Request
 		}
 	}
 
-	if err := h.writer.UpdateMetricsBatch(repoMetrics); err != nil {
+	if err := h.writer.UpdateMetricsBatchWithRetry(repoMetrics); err != nil {
 		logger.Log.Error("Failed to update metrics batch", zap.Error(err))
 		http.Error(w, "Failed to update metrics", http.StatusInternalServerError)
 		return

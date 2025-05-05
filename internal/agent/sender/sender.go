@@ -12,6 +12,7 @@ import (
 	"log"
 	"net/http"
 	"reflect"
+	"time"
 )
 
 type Sender struct {
@@ -128,4 +129,21 @@ func (s *Sender) SendMetrics(metricsBatch []*metrics.Metrics) error {
 	}
 
 	return nil
+}
+
+func (s *Sender) SendMetricsWithRetries(metricsBatch []*metrics.Metrics) error {
+	retries := []time.Duration{1 * time.Second, 3 * time.Second, 5 * time.Second}
+
+	var lastErr error
+	for _, wait := range retries {
+		if err := s.SendMetrics(metricsBatch); err != nil {
+			log.Printf("retriable error: %v, retrying in %v", err, wait)
+			lastErr = err
+			time.Sleep(wait)
+		} else {
+			return nil
+		}
+	}
+
+	return lastErr
 }

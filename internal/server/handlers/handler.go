@@ -7,13 +7,18 @@ import (
 
 type ReaderServiceInterface interface {
 	GetMetric(metricName string) (repositories.Metric, error)
+	GetMetricWithRetry(metricName string) (repositories.Metric, error)
 	GetMetrics() (map[string]repositories.Metric, error)
+	GetMetricsWithRetry() (map[string]repositories.Metric, error)
 }
 
 type WriterServiceInterface interface {
 	UpdateGaugeMetric(name string, value float64) error
 	UpdateCounterMetric(name string, value int64) error
 	UpdateMetricsBatch(metrics map[string]repositories.Metric) error
+	UpdateGaugeMetricWithRetry(name string, value float64) error
+	UpdateCounterMetricWithRetry(name string, value int64) error
+	UpdateMetricsBatchWithRetry(metrics map[string]repositories.Metric) error
 }
 
 type Handler struct {
