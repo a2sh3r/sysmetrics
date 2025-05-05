@@ -42,6 +42,10 @@ func IsRetriableError(err error) bool {
 		return false
 	}
 
+	if errors.Is(err, sql.ErrNoRows) {
+		return false
+	}
+
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) {
 		switch pgErr.Code {
