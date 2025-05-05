@@ -23,11 +23,11 @@ func WithRetries(fn RetriableFunc) error {
 	var lastErr error
 	for _, wait := range retries {
 		if err := fn(); err != nil {
-			logger.Log.Error("retriable error", zap.Error(err), zap.Duration("duration", wait))
 			lastErr = err
 			if !IsRetriableError(err) {
 				return err
 			}
+			logger.Log.Error("retriable error", zap.Error(err), zap.Duration("duration", wait))
 			time.Sleep(wait)
 		} else {
 			return nil
@@ -39,10 +39,6 @@ func WithRetries(fn RetriableFunc) error {
 
 func IsRetriableError(err error) bool {
 	if err == nil {
-		return false
-	}
-
-	if errors.Is(err, sql.ErrNoRows) {
 		return false
 	}
 

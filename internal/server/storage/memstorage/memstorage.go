@@ -117,14 +117,9 @@ func (ms *MemStorage) updateCounterMetric(existingMetric *repositories.Metric, n
 		return ErrMetricInvalidType
 	}
 
-	if existingMetric.Value == nil {
-		existingMetric.Value = newValue
-		return nil
-	}
-
 	existingValue, ok := existingMetric.Value.(int64)
 	if !ok {
-		return ErrMetricInvalidType
+		existingValue = 0
 	}
 
 	existingMetric.Value = existingValue + newValue
