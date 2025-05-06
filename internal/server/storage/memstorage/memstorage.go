@@ -1,6 +1,7 @@
 package memstorage
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/a2sh3r/sysmetrics/internal/constants"
@@ -27,7 +28,11 @@ func NewMemStorage() *MemStorage {
 	}
 }
 
-func (ms *MemStorage) GetMetric(metricName string) (repositories.Metric, error) {
+func (ms *MemStorage) GetMetric(ctx context.Context, metricName string) (repositories.Metric, error) {
+	if ctx.Err() != nil {
+		return repositories.Metric{}, ctx.Err()
+	}
+
 	if ms == nil {
 		return repositories.Metric{}, ErrStorageNil
 	}
@@ -45,7 +50,10 @@ func (ms *MemStorage) GetMetric(metricName string) (repositories.Metric, error) 
 	return repositories.Metric{}, ErrMetricNotFound
 }
 
-func (ms *MemStorage) GetMetrics() (map[string]repositories.Metric, error) {
+func (ms *MemStorage) GetMetrics(ctx context.Context) (map[string]repositories.Metric, error) {
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
 	if ms == nil {
 		return map[string]repositories.Metric{}, ErrStorageNil
 	}
@@ -60,7 +68,10 @@ func (ms *MemStorage) GetMetrics() (map[string]repositories.Metric, error) {
 	return ms.metrics, nil
 }
 
-func (ms *MemStorage) UpdateMetric(metricName string, metric repositories.Metric) error {
+func (ms *MemStorage) UpdateMetric(ctx context.Context, metricName string, metric repositories.Metric) error {
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
 	if metricName == "" {
 		return ErrMetricInvalidName
 	}
@@ -117,14 +128,9 @@ func (ms *MemStorage) updateCounterMetric(existingMetric *repositories.Metric, n
 		return ErrMetricInvalidType
 	}
 
-	if existingMetric.Value == nil {
-		existingMetric.Value = newValue
-		return nil
-	}
-
 	existingValue, ok := existingMetric.Value.(int64)
 	if !ok {
-		return ErrMetricInvalidType
+		existingValue = 0
 	}
 
 	existingMetric.Value = existingValue + newValue
@@ -141,5 +147,69 @@ func (ms *MemStorage) updateGaugeMetric(existingMetric *repositories.Metric, new
 	}
 
 	existingMetric.Value = newValue
+	return nil
+}
+
+func (ms *MemStorage) UpdateMetricsBatch(ctx context.Context, metrics map[string]repositories.Metric) error {
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+
+	if ms == nil {
+		return fmt.Errorf("storage is nil")
+	}
+
+	ms.mu.Lock()
+	defer ms.mu.Unlock()
+
+	if ms.metrics == nil {
+		return ErrMetricsMapNil
+	}
+
+	for name, metric := range metrics {
+		if name == "" {
+			return ErrMetricInvalidName
+		}
+
+		if metric.Type != constants.MetricTypeCounter && metric.Type != constants.MetricTypeGauge {
+			return ErrMetricInvalidType
+		}
+
+		existingMetric, exists := ms.metrics[name]
+
+		if !exists {
+			ms.metrics[name] = metric
+			continue
+		}
+
+		if existingMetric.Type != metric.Type {
+			return ErrMetricInvalidType
+		}
+
+		switch metric.Type {
+		case constants.MetricTypeCounter:
+			newValue, ok := metric.Value.(int64)
+			if !ok {
+				return ErrMetricInvalidType
+			}
+
+			existingValue, ok := existingMetric.Value.(int64)
+			if !ok {
+				existingValue = 0
+			}
+
+			existingMetric.Value = existingValue + newValue
+		case constants.MetricTypeGauge:
+			newValue, ok := metric.Value.(float64)
+			if !ok {
+				return fmt.Errorf("invalid gauge value type: %T", metric.Value)
+			}
+			existingMetric.Value = newValue
+		default:
+			return ErrMetricInvalidType
+		}
+		ms.metrics[name] = existingMetric
+	}
+
 	return nil
 }

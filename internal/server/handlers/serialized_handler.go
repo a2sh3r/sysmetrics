@@ -5,6 +5,7 @@ import (
 	"github.com/a2sh3r/sysmetrics/internal/constants"
 	"github.com/a2sh3r/sysmetrics/internal/logger"
 	"github.com/a2sh3r/sysmetrics/internal/models"
+	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
 	"go.uber.org/zap"
 	"net/http"
 )
@@ -25,7 +26,7 @@ func (h *Handler) UpdateSerializedMetric(w http.ResponseWriter, r *http.Request)
 			http.Error(w, "Missing gauge value", http.StatusBadRequest)
 			return
 		}
-		if err := h.writer.UpdateGaugeMetric(m.ID, *m.Value); err != nil {
+		if err := h.writer.UpdateGaugeMetricWithRetry(r.Context(), m.ID, *m.Value); err != nil {
 			logger.Log.Error("Failed to update gauge", zap.String("metric_id", m.ID), zap.Error(err))
 			http.Error(w, "Failed to update gauge", http.StatusInternalServerError)
 			return
@@ -36,7 +37,7 @@ func (h *Handler) UpdateSerializedMetric(w http.ResponseWriter, r *http.Request)
 			http.Error(w, "Missing counter delta", http.StatusBadRequest)
 			return
 		}
-		if err := h.writer.UpdateCounterMetric(m.ID, *m.Delta); err != nil {
+		if err := h.writer.UpdateCounterMetricWithRetry(r.Context(), m.ID, *m.Delta); err != nil {
 			logger.Log.Error("Failed to update counter", zap.String("metric_id", m.ID), zap.Error(err))
 			http.Error(w, "Failed to update counter", http.StatusInternalServerError)
 			return
@@ -47,7 +48,7 @@ func (h *Handler) UpdateSerializedMetric(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	updated, err := h.reader.GetMetric(m.ID)
+	updated, err := h.reader.GetMetricWithRetry(r.Context(), m.ID)
 	if err != nil {
 		logger.Log.Error("Metric not found after update", zap.String("metric_id", m.ID), zap.Error(err))
 		http.Error(w, "Metric not found after update", http.StatusNotFound)
@@ -76,7 +77,7 @@ func (h *Handler) GetSerializedMetric(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	stored, err := h.reader.GetMetric(m.ID)
+	stored, err := h.reader.GetMetricWithRetry(r.Context(), m.ID)
 	if err != nil {
 		logger.Log.Warn("Metric not found", zap.String("metric_id", m.ID), zap.Error(err))
 		http.Error(w, "Metric not found", http.StatusNotFound)
@@ -91,4 +92,63 @@ func (h *Handler) GetSerializedMetric(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		logger.Log.Error("Failed to encode response", zap.Error(err))
 	}
+}
+
+func (h *Handler) UpdateSerializedMetrics(w http.ResponseWriter, r *http.Request) {
+	var metrics []models.Metrics
+	if err := json.NewDecoder(r.Body).Decode(&metrics); err != nil {
+		logger.Log.Warn("Failed to decode JSON for batch update", zap.Error(err))
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	if len(metrics) == 0 {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	repoMetrics := make(map[string]repositories.Metric)
+	for _, m := range metrics {
+		switch m.MType {
+		case constants.MetricTypeGauge:
+			if m.Value == nil {
+				logger.Log.Warn("Missing value for gauge", zap.String("metric_id", m.ID))
+				http.Error(w, "Missing gauge value", http.StatusBadRequest)
+				return
+			}
+			repoMetrics[m.ID] = repositories.Metric{
+				Type:  constants.MetricTypeGauge,
+				Value: *m.Value,
+			}
+		case constants.MetricTypeCounter:
+			if m.Delta == nil {
+				logger.Log.Warn("Missing delta for counter", zap.String("metric_id", m.ID))
+				http.Error(w, "Missing counter delta", http.StatusBadRequest)
+				return
+			}
+			if existing, ok := repoMetrics[m.ID]; ok && existing.Type == constants.MetricTypeCounter {
+				repoMetrics[m.ID] = repositories.Metric{
+					Type:  constants.MetricTypeCounter,
+					Value: existing.Value.(int64) + *m.Delta,
+				}
+			} else {
+				repoMetrics[m.ID] = repositories.Metric{
+					Type:  constants.MetricTypeCounter,
+					Value: *m.Delta,
+				}
+			}
+		default:
+			logger.Log.Warn("Unsupported metric type", zap.String("type", m.MType))
+			http.Error(w, "Unknown metric type", http.StatusNotImplemented)
+			return
+		}
+	}
+
+	if err := h.writer.UpdateMetricsBatchWithRetry(r.Context(), repoMetrics); err != nil {
+		logger.Log.Error("Failed to update metrics batch", zap.Error(err))
+		http.Error(w, "Failed to update metrics", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }

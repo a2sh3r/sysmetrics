@@ -2,6 +2,7 @@ package sender
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/a2sh3r/sysmetrics/internal/agent/metrics"
@@ -12,6 +13,7 @@ import (
 	"log"
 	"net/http"
 	"reflect"
+	"time"
 )
 
 type Sender struct {
@@ -60,28 +62,28 @@ func toModelMetrics(m *metrics.Metrics) []*models.Metrics {
 	return result
 }
 
-func (s *Sender) sendMetricJSON(metric *models.Metrics) error {
-	data, err := json.Marshal(metric)
+func (s *Sender) sendMetricsBatchJSON(ctx context.Context, metrics []*models.Metrics) error {
+	data, err := json.Marshal(metrics)
 	if err != nil {
-		return fmt.Errorf("failed to marshal metric %s: %w", metric.ID, err)
+		return fmt.Errorf("failed to marshal metrics batch: %w", err)
 	}
 
 	compressedData, err := utils.CompressData(data)
 	if err != nil {
-		return fmt.Errorf("failed to compress data: %w", err)
+		return fmt.Errorf("failed to compress metrics batch: %w", err)
 	}
 
-	url := s.serverAddress + "/update/"
-	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(compressedData))
+	url := s.serverAddress + "/updates/"
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(compressedData))
 	if err != nil {
-		return fmt.Errorf("failed to create request: %w", err)
+		return fmt.Errorf("failed to create batch request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Content-Encoding", "gzip")
 
 	resp, err := s.client.Do(req)
 	if err != nil {
-		return fmt.Errorf("failed to send request: %w", err)
+		return fmt.Errorf("failed to send batch request: %w", err)
 	}
 	defer func() {
 		if resp != nil && resp.Body != nil {
@@ -96,36 +98,55 @@ func (s *Sender) sendMetricJSON(metric *models.Metrics) error {
 		return fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	log.Printf("Server response (status %d): %s", resp.StatusCode, string(body))
+	log.Printf("Server batch response (status %d): %s", resp.StatusCode, string(body))
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("server returned status %d for metric %s", resp.StatusCode, metric.ID)
+		return fmt.Errorf("server returned status %d for batch update", resp.StatusCode)
 	}
 
 	return nil
 }
 
-func (s *Sender) SendMetrics(metricsBatch []*metrics.Metrics) error {
+func (s *Sender) SendMetrics(ctx context.Context, metricsBatch []*metrics.Metrics) error {
 	if metricsBatch == nil {
 		return fmt.Errorf("metricsBatch is nil")
 	}
-
 	if len(metricsBatch) == 0 {
 		return fmt.Errorf("metricsBatch is empty")
 	}
 
+	var allModelMetrics []*models.Metrics
 	for _, m := range metricsBatch {
 		if m == nil {
 			return fmt.Errorf("metric is nil")
 		}
 		modelMetrics := toModelMetrics(m)
-		for _, metric := range modelMetrics {
-			err := s.sendMetricJSON(metric)
-			if err != nil {
-				return fmt.Errorf("failed to send metric %s: %w", metric.ID, err)
+		allModelMetrics = append(allModelMetrics, modelMetrics...)
+	}
+
+	return s.sendMetricsBatchJSON(ctx, allModelMetrics)
+}
+
+func (s *Sender) SendMetricsWithRetries(ctx context.Context, metricsBatch []*metrics.Metrics) error {
+	retries := []time.Duration{1 * time.Second, 3 * time.Second, 5 * time.Second}
+
+	var lastErr error
+	for _, wait := range retries {
+		if err := s.SendMetrics(ctx, metricsBatch); err != nil {
+			log.Printf("retriable error: %v, retrying in %v", err, wait)
+			lastErr = err
+
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-time.After(wait):
+				continue
 			}
+
+		} else {
+			return nil
 		}
 	}
 
-	return nil
+	return lastErr
 }
