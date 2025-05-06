@@ -2,6 +2,7 @@ package sender
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/a2sh3r/sysmetrics/internal/agent/metrics"
@@ -61,7 +62,7 @@ func toModelMetrics(m *metrics.Metrics) []*models.Metrics {
 	return result
 }
 
-func (s *Sender) sendMetricsBatchJSON(metrics []*models.Metrics) error {
+func (s *Sender) sendMetricsBatchJSON(ctx context.Context, metrics []*models.Metrics) error {
 	data, err := json.Marshal(metrics)
 	if err != nil {
 		return fmt.Errorf("failed to marshal metrics batch: %w", err)
@@ -73,7 +74,7 @@ func (s *Sender) sendMetricsBatchJSON(metrics []*models.Metrics) error {
 	}
 
 	url := s.serverAddress + "/updates/"
-	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(compressedData))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(compressedData))
 	if err != nil {
 		return fmt.Errorf("failed to create batch request: %w", err)
 	}
@@ -106,7 +107,7 @@ func (s *Sender) sendMetricsBatchJSON(metrics []*models.Metrics) error {
 	return nil
 }
 
-func (s *Sender) SendMetrics(metricsBatch []*metrics.Metrics) error {
+func (s *Sender) SendMetrics(ctx context.Context, metricsBatch []*metrics.Metrics) error {
 	if metricsBatch == nil {
 		return fmt.Errorf("metricsBatch is nil")
 	}
@@ -123,18 +124,25 @@ func (s *Sender) SendMetrics(metricsBatch []*metrics.Metrics) error {
 		allModelMetrics = append(allModelMetrics, modelMetrics...)
 	}
 
-	return s.sendMetricsBatchJSON(allModelMetrics)
+	return s.sendMetricsBatchJSON(ctx, allModelMetrics)
 }
 
-func (s *Sender) SendMetricsWithRetries(metricsBatch []*metrics.Metrics) error {
+func (s *Sender) SendMetricsWithRetries(ctx context.Context, metricsBatch []*metrics.Metrics) error {
 	retries := []time.Duration{1 * time.Second, 3 * time.Second, 5 * time.Second}
 
 	var lastErr error
 	for _, wait := range retries {
-		if err := s.SendMetrics(metricsBatch); err != nil {
+		if err := s.SendMetrics(ctx, metricsBatch); err != nil {
 			log.Printf("retriable error: %v, retrying in %v", err, wait)
 			lastErr = err
-			time.Sleep(wait)
+
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-time.After(wait):
+				continue
+			}
+
 		} else {
 			return nil
 		}

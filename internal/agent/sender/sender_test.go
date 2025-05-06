@@ -1,6 +1,7 @@
 package sender
 
 import (
+	"context"
 	"github.com/a2sh3r/sysmetrics/internal/agent/metrics"
 	"github.com/stretchr/testify/assert"
 	"net/http"
@@ -10,6 +11,7 @@ import (
 )
 
 func TestSender_SendMetrics(t *testing.T) {
+	ctx := context.Background()
 	tests := []struct {
 		name          string
 		serverAddress string
@@ -74,7 +76,7 @@ func TestSender_SendMetrics(t *testing.T) {
 				client:        &http.Client{Timeout: 5 * time.Second},
 			}
 
-			err := s.SendMetrics(tt.metricsBatch)
+			err := s.SendMetrics(ctx, tt.metricsBatch)
 			if tt.wantErr {
 				assert.Error(t, err)
 			} else {

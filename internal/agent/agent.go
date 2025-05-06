@@ -54,7 +54,7 @@ func (a *Agent) Run(ctx context.Context) {
 			select {
 			case <-ticker.C:
 				if len(metricsBatch) > 0 {
-					if err := a.sender.SendMetricsWithRetries(metricsBatch); err != nil {
+					if err := a.sender.SendMetricsWithRetries(ctx, metricsBatch); err != nil {
 						log.Printf("Error sending metrics: %v", err)
 					}
 					metricsBatch = nil
