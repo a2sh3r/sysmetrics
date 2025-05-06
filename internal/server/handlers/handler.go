@@ -1,24 +1,25 @@
 package handlers
 
 import (
+	"context"
 	"database/sql"
 	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
 )
 
 type ReaderServiceInterface interface {
-	GetMetric(metricName string) (repositories.Metric, error)
-	GetMetricWithRetry(metricName string) (repositories.Metric, error)
-	GetMetrics() (map[string]repositories.Metric, error)
-	GetMetricsWithRetry() (map[string]repositories.Metric, error)
+	GetMetric(ctx context.Context, metricName string) (repositories.Metric, error)
+	GetMetricWithRetry(ctx context.Context, metricName string) (repositories.Metric, error)
+	GetMetrics(ctx context.Context) (map[string]repositories.Metric, error)
+	GetMetricsWithRetry(ctx context.Context) (map[string]repositories.Metric, error)
 }
 
 type WriterServiceInterface interface {
-	UpdateGaugeMetric(name string, value float64) error
-	UpdateCounterMetric(name string, value int64) error
-	UpdateMetricsBatch(metrics map[string]repositories.Metric) error
-	UpdateGaugeMetricWithRetry(name string, value float64) error
-	UpdateCounterMetricWithRetry(name string, value int64) error
-	UpdateMetricsBatchWithRetry(metrics map[string]repositories.Metric) error
+	UpdateGaugeMetric(ctx context.Context, name string, value float64) error
+	UpdateCounterMetric(ctx context.Context, name string, value int64) error
+	UpdateMetricsBatch(ctx context.Context, metrics map[string]repositories.Metric) error
+	UpdateGaugeMetricWithRetry(ctx context.Context, name string, value float64) error
+	UpdateCounterMetricWithRetry(ctx context.Context, name string, value int64) error
+	UpdateMetricsBatchWithRetry(ctx context.Context, metrics map[string]repositories.Metric) error
 }
 
 type Handler struct {

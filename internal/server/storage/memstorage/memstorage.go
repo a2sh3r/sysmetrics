@@ -1,6 +1,7 @@
 package memstorage
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/a2sh3r/sysmetrics/internal/constants"
@@ -27,7 +28,11 @@ func NewMemStorage() *MemStorage {
 	}
 }
 
-func (ms *MemStorage) GetMetric(metricName string) (repositories.Metric, error) {
+func (ms *MemStorage) GetMetric(ctx context.Context, metricName string) (repositories.Metric, error) {
+	if ctx.Err() != nil {
+		return repositories.Metric{}, ctx.Err()
+	}
+
 	if ms == nil {
 		return repositories.Metric{}, ErrStorageNil
 	}
@@ -45,7 +50,10 @@ func (ms *MemStorage) GetMetric(metricName string) (repositories.Metric, error) 
 	return repositories.Metric{}, ErrMetricNotFound
 }
 
-func (ms *MemStorage) GetMetrics() (map[string]repositories.Metric, error) {
+func (ms *MemStorage) GetMetrics(ctx context.Context) (map[string]repositories.Metric, error) {
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
 	if ms == nil {
 		return map[string]repositories.Metric{}, ErrStorageNil
 	}
@@ -60,7 +68,10 @@ func (ms *MemStorage) GetMetrics() (map[string]repositories.Metric, error) {
 	return ms.metrics, nil
 }
 
-func (ms *MemStorage) UpdateMetric(metricName string, metric repositories.Metric) error {
+func (ms *MemStorage) UpdateMetric(ctx context.Context, metricName string, metric repositories.Metric) error {
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
 	if metricName == "" {
 		return ErrMetricInvalidName
 	}
@@ -139,7 +150,11 @@ func (ms *MemStorage) updateGaugeMetric(existingMetric *repositories.Metric, new
 	return nil
 }
 
-func (ms *MemStorage) UpdateMetricsBatch(metrics map[string]repositories.Metric) error {
+func (ms *MemStorage) UpdateMetricsBatch(ctx context.Context, metrics map[string]repositories.Metric) error {
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+
 	if ms == nil {
 		return fmt.Errorf("storage is nil")
 	}

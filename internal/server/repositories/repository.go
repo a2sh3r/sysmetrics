@@ -1,10 +1,12 @@
 package repositories
 
+import "context"
+
 type Storage interface {
-	UpdateMetric(metricName string, metric Metric) error
-	GetMetric(metricName string) (Metric, error)
-	GetMetrics() (map[string]Metric, error)
-	UpdateMetricsBatch(metrics map[string]Metric) error
+	UpdateMetric(ctx context.Context, metricName string, metric Metric) error
+	GetMetric(ctx context.Context, metricName string) (Metric, error)
+	GetMetrics(ctx context.Context) (map[string]Metric, error)
+	UpdateMetricsBatch(ctx context.Context, metrics map[string]Metric) error
 }
 
 type Metric struct {

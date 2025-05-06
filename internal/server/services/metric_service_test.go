@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"github.com/a2sh3r/sysmetrics/internal/constants"
 	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
@@ -37,6 +38,7 @@ func TestNewService(t *testing.T) {
 }
 
 func TestService_UpdateCounterMetric(t *testing.T) {
+	ctx := context.Background()
 	type fields struct {
 		repo MetricRepository
 	}
@@ -78,7 +80,7 @@ func TestService_UpdateCounterMetric(t *testing.T) {
 			s := &Service{
 				repo: tt.fields.repo,
 			}
-			err := s.UpdateCounterMetric(tt.args.name, tt.args.value)
+			err := s.UpdateCounterMetric(ctx, tt.args.name, tt.args.value)
 			if tt.wantErr {
 				assert.Error(t, err)
 			} else {
@@ -89,6 +91,7 @@ func TestService_UpdateCounterMetric(t *testing.T) {
 }
 
 func TestService_UpdateGaugeMetric(t *testing.T) {
+	ctx := context.Background()
 	type fields struct {
 		repo MetricRepository
 	}
@@ -130,7 +133,7 @@ func TestService_UpdateGaugeMetric(t *testing.T) {
 			s := &Service{
 				repo: tt.fields.repo,
 			}
-			err := s.UpdateGaugeMetric(tt.args.name, tt.args.value)
+			err := s.UpdateGaugeMetric(ctx, tt.args.name, tt.args.value)
 			if tt.wantErr {
 				assert.Error(t, err)
 			} else {
@@ -141,6 +144,7 @@ func TestService_UpdateGaugeMetric(t *testing.T) {
 }
 
 func TestService_GetMetrics(t *testing.T) {
+	ctx := context.Background()
 	type fields struct {
 		repo MetricRepository
 	}
@@ -184,7 +188,7 @@ func TestService_GetMetrics(t *testing.T) {
 			s := &Service{
 				repo: tt.fields.repo,
 			}
-			got, err := s.GetMetrics()
+			got, err := s.GetMetrics(ctx)
 			if tt.wantErr {
 				assert.Error(t, err)
 			} else {
@@ -196,6 +200,7 @@ func TestService_GetMetrics(t *testing.T) {
 }
 
 func TestService_GetMetric(t *testing.T) {
+	ctx := context.Background()
 	type fields struct {
 		repo MetricRepository
 	}
@@ -240,7 +245,7 @@ func TestService_GetMetric(t *testing.T) {
 			s := &Service{
 				repo: tt.fields.repo,
 			}
-			got, err := s.GetMetric(tt.args.name)
+			got, err := s.GetMetric(ctx, tt.args.name)
 			if tt.wantErr {
 				assert.Error(t, err)
 			} else {
@@ -257,7 +262,7 @@ type mockRepo struct {
 	errOnGet    bool
 }
 
-func (m *mockRepo) GetMetric(name string) (repositories.Metric, error) {
+func (m *mockRepo) GetMetric(_ context.Context, name string) (repositories.Metric, error) {
 	if m.errOnGet {
 		return repositories.Metric{}, fmt.Errorf("mock get error")
 	}
@@ -268,21 +273,21 @@ func (m *mockRepo) GetMetric(name string) (repositories.Metric, error) {
 	return metric, nil
 }
 
-func (m *mockRepo) GetMetrics() (map[string]repositories.Metric, error) {
+func (m *mockRepo) GetMetrics(_ context.Context) (map[string]repositories.Metric, error) {
 	if m.errOnGet {
 		return map[string]repositories.Metric{}, fmt.Errorf("mock get error")
 	}
 	return m.metrics, nil
 }
 
-func (m *mockRepo) SaveMetric(name string, value interface{}, metricType string) error {
+func (m *mockRepo) SaveMetric(_ context.Context, name string, value interface{}, metricType string) error {
 	if m.errOnUpdate {
 		return fmt.Errorf("mock update error with %v, %v, %v", name, value, metricType)
 	}
 	return nil
 }
 
-func (m *mockRepo) UpdateMetricsBatch(metrics map[string]repositories.Metric) error {
+func (m *mockRepo) UpdateMetricsBatch(_ context.Context, metrics map[string]repositories.Metric) error {
 	if m.errOnUpdate {
 		return fmt.Errorf("mock update error with %v", metrics)
 	}

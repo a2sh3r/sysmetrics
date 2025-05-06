@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/a2sh3r/sysmetrics/internal/constants"
@@ -378,7 +379,7 @@ type mockRepo struct {
 	errOnGet    bool
 }
 
-func (m *mockRepo) SaveMetric(name string, value interface{}, metricType string) error {
+func (m *mockRepo) SaveMetric(_ context.Context, name string, value interface{}, metricType string) error {
 	if m.errOnUpdate {
 		return fmt.Errorf("mock update error")
 	}
@@ -392,7 +393,7 @@ func (m *mockRepo) SaveMetric(name string, value interface{}, metricType string)
 	return nil
 }
 
-func (m *mockRepo) GetMetric(name string) (repositories.Metric, error) {
+func (m *mockRepo) GetMetric(_ context.Context, name string) (repositories.Metric, error) {
 	if m.errOnGet {
 		return repositories.Metric{}, fmt.Errorf("mock get error")
 	}
@@ -403,14 +404,14 @@ func (m *mockRepo) GetMetric(name string) (repositories.Metric, error) {
 	return metric, nil
 }
 
-func (m *mockRepo) GetMetrics() (map[string]repositories.Metric, error) {
+func (m *mockRepo) GetMetrics(_ context.Context) (map[string]repositories.Metric, error) {
 	if m.errOnGet {
 		return map[string]repositories.Metric{}, fmt.Errorf("mock get error")
 	}
 	return m.metrics, nil
 }
 
-func (m *mockRepo) UpdateMetricsBatch(metrics map[string]repositories.Metric) error {
+func (m *mockRepo) UpdateMetricsBatch(_ context.Context, metrics map[string]repositories.Metric) error {
 	if m.errOnUpdate {
 		return fmt.Errorf("mock update error")
 	}
@@ -423,10 +424,10 @@ func (m *mockRepo) UpdateMetricsBatch(metrics map[string]repositories.Metric) er
 	return nil
 }
 
-func (m *mockRepo) UpdateGaugeMetric(id string, value float64) error {
-	return m.SaveMetric(id, value, constants.MetricTypeGauge)
+func (m *mockRepo) UpdateGaugeMetric(ctx context.Context, id string, value float64) error {
+	return m.SaveMetric(ctx, id, value, constants.MetricTypeGauge)
 }
 
-func (m *mockRepo) UpdateCounterMetric(id string, delta int64) error {
-	return m.SaveMetric(id, delta, constants.MetricTypeCounter)
+func (m *mockRepo) UpdateCounterMetric(ctx context.Context, id string, delta int64) error {
+	return m.SaveMetric(ctx, id, delta, constants.MetricTypeCounter)
 }

@@ -31,7 +31,7 @@ func NewDBStorage(db *sql.DB) (*DBStorage, error) {
 	return &DBStorage{db: db}, nil
 }
 
-func (s *DBStorage) UpdateMetric(name string, metric repositories.Metric) error {
+func (s *DBStorage) UpdateMetric(ctx context.Context, name string, metric repositories.Metric) error {
 	switch metric.Type {
 	case "gauge":
 		query := `
@@ -41,7 +41,7 @@ func (s *DBStorage) UpdateMetric(name string, metric repositories.Metric) error 
 			SET delta = NULL,
 				value = $2`
 		value := metric.Value.(float64)
-		_, err := s.db.ExecContext(context.Background(), query, name, value)
+		_, err := s.db.ExecContext(ctx, query, name, value)
 		return err
 	case "counter":
 		query := `
@@ -51,16 +51,16 @@ func (s *DBStorage) UpdateMetric(name string, metric repositories.Metric) error 
 			SET delta = metrics.delta + $2,
 				value = NULL`
 		delta := metric.Value.(int64)
-		_, err := s.db.ExecContext(context.Background(), query, name, delta)
+		_, err := s.db.ExecContext(ctx, query, name, delta)
 		return err
 	default:
 		return fmt.Errorf("unknown metric type: %s", metric.Type)
 	}
 }
 
-func (s *DBStorage) GetMetric(name string) (repositories.Metric, error) {
+func (s *DBStorage) GetMetric(ctx context.Context, name string) (repositories.Metric, error) {
 	query := `SELECT type, delta, value FROM metrics WHERE id = $1`
-	row := s.db.QueryRowContext(context.Background(), query, name)
+	row := s.db.QueryRowContext(ctx, query, name)
 
 	var typ string
 	var delta sql.NullInt64
@@ -84,9 +84,9 @@ func (s *DBStorage) GetMetric(name string) (repositories.Metric, error) {
 	return repositories.Metric{Type: typ, Value: val}, nil
 }
 
-func (s *DBStorage) GetMetrics() (map[string]repositories.Metric, error) {
+func (s *DBStorage) GetMetrics(ctx context.Context) (map[string]repositories.Metric, error) {
 	query := `SELECT id, type, delta, value FROM metrics`
-	rows, err := s.db.QueryContext(context.Background(), query)
+	rows, err := s.db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -126,12 +126,12 @@ func (s *DBStorage) GetMetrics() (map[string]repositories.Metric, error) {
 	return metrics, nil
 }
 
-func (s *DBStorage) UpdateMetricsBatch(metrics map[string]repositories.Metric) error {
+func (s *DBStorage) UpdateMetricsBatch(ctx context.Context, metrics map[string]repositories.Metric) error {
 	if len(metrics) == 0 {
 		return nil
 	}
 
-	tx, err := s.db.BeginTx(context.Background(), nil)
+	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
@@ -157,7 +157,7 @@ func (s *DBStorage) UpdateMetricsBatch(metrics map[string]repositories.Metric) e
 		SET delta = NULL,
 			value = $2`
 
-	counterStmt, err := tx.PrepareContext(context.Background(), counterQuery)
+	counterStmt, err := tx.PrepareContext(ctx, counterQuery)
 	if err != nil {
 		return fmt.Errorf("failed to prepare counter statement: %w", err)
 	}
@@ -168,7 +168,7 @@ func (s *DBStorage) UpdateMetricsBatch(metrics map[string]repositories.Metric) e
 		}
 	}(counterStmt)
 
-	gaugeStmt, err := tx.PrepareContext(context.Background(), gaugeQuery)
+	gaugeStmt, err := tx.PrepareContext(ctx, gaugeQuery)
 	if err != nil {
 		return fmt.Errorf("failed to prepare gauge statement: %w", err)
 	}
@@ -183,12 +183,12 @@ func (s *DBStorage) UpdateMetricsBatch(metrics map[string]repositories.Metric) e
 		switch metric.Type {
 		case "gauge":
 			value := metric.Value.(float64)
-			if _, err := gaugeStmt.ExecContext(context.Background(), id, value); err != nil {
+			if _, err := gaugeStmt.ExecContext(ctx, id, value); err != nil {
 				return fmt.Errorf("failed to execute gauge statement for metric %s: %w", id, err)
 			}
 		case "counter":
 			delta := metric.Value.(int64)
-			if _, err := counterStmt.ExecContext(context.Background(), id, delta); err != nil {
+			if _, err := counterStmt.ExecContext(ctx, id, delta); err != nil {
 				return fmt.Errorf("failed to execute counter statement for metric %s: %w", id, err)
 			}
 		default:

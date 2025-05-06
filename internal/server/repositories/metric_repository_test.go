@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"fmt"
 	"github.com/a2sh3r/sysmetrics/internal/constants"
 	"github.com/stretchr/testify/assert"
@@ -13,7 +14,7 @@ type mockStorage struct {
 	errOnGet    bool
 }
 
-func (m *mockStorage) SaveMetric(name string, value interface{}, metricType string) error {
+func (m *mockStorage) SaveMetric(_ context.Context, name string, value interface{}, metricType string) error {
 	if m.errOnUpdate {
 		return fmt.Errorf("mock update error")
 	}
@@ -27,7 +28,7 @@ func (m *mockStorage) SaveMetric(name string, value interface{}, metricType stri
 	return nil
 }
 
-func (m *mockStorage) UpdateMetric(name string, metric Metric) error {
+func (m *mockStorage) UpdateMetric(_ context.Context, name string, metric Metric) error {
 	if m.errOnUpdate {
 		return fmt.Errorf("mock update error")
 	}
@@ -38,7 +39,7 @@ func (m *mockStorage) UpdateMetric(name string, metric Metric) error {
 	return nil
 }
 
-func (m *mockStorage) GetMetric(name string) (Metric, error) {
+func (m *mockStorage) GetMetric(_ context.Context, name string) (Metric, error) {
 	if m.errOnGet {
 		return Metric{}, fmt.Errorf("mock get error")
 	}
@@ -49,14 +50,14 @@ func (m *mockStorage) GetMetric(name string) (Metric, error) {
 	return metric, nil
 }
 
-func (m *mockStorage) GetMetrics() (map[string]Metric, error) {
+func (m *mockStorage) GetMetrics(_ context.Context) (map[string]Metric, error) {
 	if m.errOnGet {
 		return map[string]Metric{}, fmt.Errorf("mock get error")
 	}
 	return m.metrics, nil
 }
 
-func (m *mockStorage) UpdateMetricsBatch(metrics map[string]Metric) error {
+func (m *mockStorage) UpdateMetricsBatch(_ context.Context, metrics map[string]Metric) error {
 	if m.errOnUpdate {
 		return fmt.Errorf("mock update error")
 	}
@@ -70,6 +71,7 @@ func (m *mockStorage) UpdateMetricsBatch(metrics map[string]Metric) error {
 }
 
 func TestMetricRepo_GetMetric(t *testing.T) {
+	ctx := context.Background()
 	tests := []struct {
 		name    string
 		storage Storage
@@ -117,7 +119,7 @@ func TestMetricRepo_GetMetric(t *testing.T) {
 			r := &MetricRepo{
 				storage: tt.storage,
 			}
-			got, err := r.GetMetric(tt.metric)
+			got, err := r.GetMetric(ctx, tt.metric)
 			if tt.wantErr {
 				assert.Error(t, err)
 			} else {
@@ -129,6 +131,7 @@ func TestMetricRepo_GetMetric(t *testing.T) {
 }
 
 func TestMetricRepo_GetMetrics(t *testing.T) {
+	ctx := context.Background()
 	type fields struct {
 		storage Storage
 	}
@@ -170,7 +173,7 @@ func TestMetricRepo_GetMetrics(t *testing.T) {
 			r := &MetricRepo{
 				storage: tt.fields.storage,
 			}
-			got, err := r.GetMetrics()
+			got, err := r.GetMetrics(ctx)
 
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -183,6 +186,7 @@ func TestMetricRepo_GetMetrics(t *testing.T) {
 }
 
 func TestMetricRepo_SaveMetric(t *testing.T) {
+	ctx := context.Background()
 	type fields struct {
 		storage Storage
 	}
@@ -228,7 +232,7 @@ func TestMetricRepo_SaveMetric(t *testing.T) {
 				storage: tt.fields.storage,
 			}
 
-			err := r.SaveMetric(tt.args.name, tt.args.value, tt.args.metricType)
+			err := r.SaveMetric(ctx, tt.args.name, tt.args.value, tt.args.metricType)
 			if tt.wantErr {
 				assert.Error(t, err)
 			} else {
@@ -276,7 +280,7 @@ func NewMockStorage() *MockStorage {
 	return &MockStorage{}
 }
 
-func (m *MockStorage) UpdateMetric(metricName string, metric Metric) error {
+func (m *MockStorage) UpdateMetric(_ context.Context, metricName string, metric Metric) error {
 	if m.errOnUpdate {
 		return fmt.Errorf("mock update error")
 	}
@@ -287,7 +291,7 @@ func (m *MockStorage) UpdateMetric(metricName string, metric Metric) error {
 	return nil
 }
 
-func (m *MockStorage) GetMetric(metricName string) (Metric, error) {
+func (m *MockStorage) GetMetric(_ context.Context, metricName string) (Metric, error) {
 	if m.errOnGet {
 		return Metric{}, fmt.Errorf("mock get error")
 	}
@@ -298,14 +302,14 @@ func (m *MockStorage) GetMetric(metricName string) (Metric, error) {
 	return metric, nil
 }
 
-func (m *MockStorage) GetMetrics() (map[string]Metric, error) {
+func (m *MockStorage) GetMetrics(_ context.Context) (map[string]Metric, error) {
 	if m.errOnGet {
 		return map[string]Metric{}, fmt.Errorf("mock get error")
 	}
 	return m.metrics, nil
 }
 
-func (m *MockStorage) UpdateMetricsBatch(metrics map[string]Metric) error {
+func (m *MockStorage) UpdateMetricsBatch(_ context.Context, metrics map[string]Metric) error {
 	if m.errOnUpdate {
 		return fmt.Errorf("mock update error")
 	}
