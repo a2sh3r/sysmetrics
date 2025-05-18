@@ -20,7 +20,7 @@ type Agent struct {
 func NewAgent(cfg *config.AgentConfig) *Agent {
 	return &Agent{
 		collector:      collector.NewCollector(),
-		sender:         sender.NewSender(cfg.Address),
+		sender:         sender.NewSender(cfg.Address, cfg.SecretKey),
 		pollInterval:   time.Second * time.Duration(cfg.PollInterval),
 		reportInterval: time.Second * time.Duration(cfg.ReportInterval),
 	}
