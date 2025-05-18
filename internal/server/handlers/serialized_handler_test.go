@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/a2sh3r/sysmetrics/internal/config"
 	"github.com/a2sh3r/sysmetrics/internal/constants"
 	"github.com/a2sh3r/sysmetrics/internal/models"
 	"github.com/a2sh3r/sysmetrics/internal/server/middleware"
@@ -86,7 +87,10 @@ func TestHandler_UpdateSerializedMetric(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			h := &Handler{reader: tt.mockReaderService, writer: tt.mockWriterService}
-			ts := httptest.NewServer(middleware.NewGzipMiddleware()(NewRouter(h)))
+			cfg := &config.ServerConfig{
+				SecretKey: "test key",
+			}
+			ts := httptest.NewServer(middleware.NewGzipMiddleware()(NewRouter(h, cfg)))
 			defer ts.Close()
 
 			bodyBytes, _ := json.Marshal(tt.args.body)
@@ -225,7 +229,10 @@ func TestHandler_GetSerializedMetric(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			h := &Handler{reader: tt.mockReaderService, writer: tt.mockWriterService}
-			ts := httptest.NewServer(middleware.NewGzipMiddleware()(NewRouter(h)))
+			cfg := &config.ServerConfig{
+				SecretKey: "test key",
+			}
+			ts := httptest.NewServer(middleware.NewGzipMiddleware()(NewRouter(h, cfg)))
 			defer ts.Close()
 
 			bodyBytes, _ := json.Marshal(tt.args.body)

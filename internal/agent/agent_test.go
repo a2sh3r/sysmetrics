@@ -29,7 +29,7 @@ func TestAgent_Run(t *testing.T) {
 			name: "Test #1 run agent with valid intervals",
 			fields: fields{
 				collector:      &collector.Collector{},
-				sender:         sender.NewSender("http://localhost:8080"),
+				sender:         sender.NewSender("http://localhost:8080", ""),
 				pollInterval:   time.Second,
 				reportInterval: time.Second * 10,
 			},
@@ -77,11 +77,12 @@ func TestNewAgent(t *testing.T) {
 					Address:        "http://localhost:8080",
 					PollInterval:   2,
 					ReportInterval: 10,
+					SecretKey:      "test key",
 				},
 			},
 			want: &Agent{
 				collector:      &collector.Collector{},
-				sender:         sender.NewSender("http://localhost:8080"),
+				sender:         sender.NewSender("http://localhost:8080", "test key"),
 				pollInterval:   time.Duration(2) * time.Second,
 				reportInterval: time.Duration(10) * time.Second,
 			},

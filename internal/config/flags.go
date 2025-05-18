@@ -40,12 +40,14 @@ func (cfg *AgentConfig) ParseFlags() {
 		pollInterval   float64
 		reportInterval float64
 		logLevel       string
+		secretKey      string
 	)
 
 	flag.Var(addr, "a", "Net address host:port")
 	flag.Float64Var(&pollInterval, "p", 2, "poll interval to collect metrics")
 	flag.Float64Var(&reportInterval, "r", 10, "report interval to report metrics to server")
 	flag.StringVar(&logLevel, "l", "info", "log level")
+	flag.StringVar(&secretKey, "k", "", "secret key to calculate hash")
 
 	flag.Parse()
 
@@ -60,6 +62,10 @@ func (cfg *AgentConfig) ParseFlags() {
 	if reportInterval > 0 {
 		cfg.ReportInterval = reportInterval
 	}
+
+	if secretKey != "" {
+		cfg.SecretKey = secretKey
+	}
 }
 
 func (cfg *ServerConfig) ParseFlags() {
@@ -70,6 +76,7 @@ func (cfg *ServerConfig) ParseFlags() {
 		fileStoragePath string
 		restore         bool
 		databaseDSN     string
+		secretKey       string
 	)
 
 	flag.Var(addr, "a", "Net address host:port")
@@ -77,6 +84,7 @@ func (cfg *ServerConfig) ParseFlags() {
 	flag.StringVar(&fileStoragePath, "f", "/tmp/metrics-db.json", "file path to store metrics")
 	flag.BoolVar(&restore, "r", true, "restore metrics on start")
 	flag.StringVar(&databaseDSN, "d", "", "Database DSN")
+	flag.StringVar(&secretKey, "k", "", "secret key to calculate hash")
 
 	flag.Parse()
 
@@ -122,5 +130,11 @@ func (cfg *ServerConfig) ParseFlags() {
 		} else {
 			cfg.DatabaseDSN = "host=localhost " + cfg.DatabaseDSN
 		}
+	}
+
+	if envValue, exists := os.LookupEnv("KEY"); exists {
+		cfg.SecretKey = envValue
+	} else {
+		cfg.SecretKey = secretKey
 	}
 }
