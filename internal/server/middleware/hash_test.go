@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"github.com/a2sh3r/sysmetrics/internal/config"
 	"github.com/a2sh3r/sysmetrics/internal/hash"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -80,12 +79,12 @@ func TestHashMiddleware(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			defer func(Body io.ReadCloser) {
-				err := Body.Close()
-				if err != nil {
-					t.Errorf("got error while closing body: %v", err)
+
+			defer func() {
+				if err := resp.Body.Close(); err != nil {
+					t.Errorf("failed to close resp.Body: %v", err)
 				}
-			}(resp.Body)
+			}()
 
 			if resp.StatusCode != tt.expectedStatus {
 				t.Errorf("expected status %d, got %d", tt.expectedStatus, resp.StatusCode)
