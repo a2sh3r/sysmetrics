@@ -18,10 +18,10 @@ import (
 )
 
 type RConfig struct {
-	Interval   int64
-	FilePath   string
-	memStorage *memstorage.MemStorage
-	mu         sync.Mutex
+	Interval int64
+	FilePath string
+	Storage  repositories.Storage
+	mu       sync.Mutex
 }
 
 type metricData struct {
@@ -31,11 +31,11 @@ type metricData struct {
 
 var ErrRestoreFromFile = errors.New("error restoring from file")
 
-func NewRestoreConfig(interval int64, filePath string, memStorage *memstorage.MemStorage) *RConfig {
+func NewRestoreConfig(interval int64, filePath string, storage repositories.Storage) *RConfig {
 	return &RConfig{
-		Interval:   interval,
-		FilePath:   filePath,
-		memStorage: memStorage,
+		Interval: interval,
+		FilePath: filePath,
+		Storage:  storage,
 	}
 }
 
@@ -63,6 +63,7 @@ func (b *RConfig) StartRestore(ctx context.Context) error {
 }
 
 func (b *RConfig) SaveToFile() error {
+	ctx := context.Background()
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
@@ -73,7 +74,7 @@ func (b *RConfig) SaveToFile() error {
 		return err
 	}
 
-	metrics, err := b.memStorage.GetMetrics()
+	metrics, err := b.Storage.GetMetrics(ctx)
 	if err != nil {
 		return err
 	}
@@ -104,6 +105,7 @@ func (b *RConfig) SaveToFile() error {
 }
 
 func RestoreFromFile(filename string) (*memstorage.MemStorage, error) {
+	ctx := context.Background()
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
 		logger.Log.Info("File does not exist, creating new storage", zap.String("filename", filename))
 		return memstorage.NewMemStorage(), nil
@@ -150,7 +152,7 @@ func RestoreFromFile(filename string) (*memstorage.MemStorage, error) {
 			continue
 		}
 
-		err := ms.UpdateMetric(name, repositories.Metric{
+		err := ms.UpdateMetric(ctx, name, repositories.Metric{
 			Type:  data.Type,
 			Value: value,
 		})

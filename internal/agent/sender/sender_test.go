@@ -1,6 +1,7 @@
 package sender
 
 import (
+	"context"
 	"github.com/a2sh3r/sysmetrics/internal/agent/metrics"
 	"github.com/stretchr/testify/assert"
 	"net/http"
@@ -10,6 +11,7 @@ import (
 )
 
 func TestSender_SendMetrics(t *testing.T) {
+	ctx := context.Background()
 	tests := []struct {
 		name          string
 		serverAddress string
@@ -58,8 +60,8 @@ func TestSender_SendMetrics(t *testing.T) {
 				if r.Method != http.MethodPost {
 					t.Errorf("expected POST method, got %s", r.Method)
 				}
-				if r.URL.Path != "/update/" {
-					t.Errorf("expected path /update/, got %s", r.URL.Path)
+				if r.URL.Path != "/updates/" {
+					t.Errorf("expected path /updates/, got %s", r.URL.Path)
 				}
 				w.WriteHeader(http.StatusOK)
 			}))
@@ -74,7 +76,7 @@ func TestSender_SendMetrics(t *testing.T) {
 				client:        &http.Client{Timeout: 5 * time.Second},
 			}
 
-			err := s.SendMetrics(tt.metricsBatch)
+			err := s.SendMetrics(ctx, tt.metricsBatch)
 			if tt.wantErr {
 				assert.Error(t, err)
 			} else {

@@ -17,6 +17,7 @@ type ServerConfig struct {
 	StoreInterval   int    `env:"STORE_INTERVAL" envDefault:"300"`
 	FileStoragePath string `env:"FILE_STORAGE_PATH" envDefault:"/tmp/metrics-db.json"`
 	Restore         bool   `env:"RESTORE" envDefault:"true"`
+	DatabaseDSN     string `env:"DATABASE_DSN" envDefault:""`
 }
 
 func NewAgentConfig() (*AgentConfig, error) {

@@ -1,6 +1,7 @@
 package memstorage
 
 import (
+	"context"
 	"github.com/a2sh3r/sysmetrics/internal/constants"
 	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
 	"github.com/stretchr/testify/assert"
@@ -9,6 +10,7 @@ import (
 )
 
 func TestMemStorage_GetMetric(t *testing.T) {
+	ctx := context.Background()
 	type fields struct {
 		metrics map[string]repositories.Metric
 	}
@@ -75,7 +77,7 @@ func TestMemStorage_GetMetric(t *testing.T) {
 				metrics: tt.fields.metrics,
 				mu:      sync.RWMutex{},
 			}
-			got, err := ms.GetMetric(tt.args.name)
+			got, err := ms.GetMetric(ctx, tt.args.name)
 			if tt.wantErr {
 				assert.Error(t, err)
 			} else {
@@ -87,6 +89,7 @@ func TestMemStorage_GetMetric(t *testing.T) {
 }
 
 func TestMemStorage_GetMetrics(t *testing.T) {
+	ctx := context.Background()
 	type fields struct {
 		metrics map[string]repositories.Metric
 	}
@@ -124,7 +127,7 @@ func TestMemStorage_GetMetrics(t *testing.T) {
 				metrics: tt.fields.metrics,
 				mu:      sync.RWMutex{},
 			}
-			got, err := ms.GetMetrics()
+			got, err := ms.GetMetrics(ctx)
 			if tt.wantErr {
 				assert.Error(t, err)
 			} else {
@@ -136,6 +139,7 @@ func TestMemStorage_GetMetrics(t *testing.T) {
 }
 
 func TestMemStorage_UpdateMetric(t *testing.T) {
+	ctx := context.Background()
 	type fields struct {
 		metrics map[string]repositories.Metric
 	}
@@ -230,7 +234,7 @@ func TestMemStorage_UpdateMetric(t *testing.T) {
 				metrics: tt.fields.metrics,
 				mu:      sync.RWMutex{},
 			}
-			err := ms.UpdateMetric(tt.args.name, tt.args.metric)
+			err := ms.UpdateMetric(ctx, tt.args.name, tt.args.metric)
 			if tt.wantErr {
 				assert.Error(t, err)
 			} else {
