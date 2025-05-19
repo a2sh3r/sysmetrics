@@ -58,6 +58,18 @@ func toModelMetrics(m *metrics.Metrics) []*models.Metrics {
 				Delta: &iv,
 				Value: nil,
 			})
+		case reflect.Slice:
+			if fieldName == "CPUUtilization" {
+				for j := 0; j < field.Len(); j++ {
+					fv := field.Index(j).Float()
+					result = append(result, &models.Metrics{
+						ID:    fmt.Sprintf("CPUutilization%d", j+1),
+						MType: constants.MetricTypeGauge,
+						Delta: nil,
+						Value: &fv,
+					})
+				}
+			}
 		default:
 			panic("unhandled default case")
 		}

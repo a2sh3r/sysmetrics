@@ -10,6 +10,7 @@ type AgentConfig struct {
 	ReportInterval float64 `env:"REPORT_INTERVAL" envDefault:"10"`
 	Address        string  `env:"ADDRESS" envDefault:"localhost:8080"`
 	SecretKey      string  `env:"KEY" envDefault:""`
+	RateLimit      int64   `env:"RATE_LIMIT" envDefault:"1"`
 }
 
 type ServerConfig struct {
