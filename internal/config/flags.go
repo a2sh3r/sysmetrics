@@ -39,13 +39,15 @@ func (cfg *AgentConfig) ParseFlags() {
 	var (
 		pollInterval   float64
 		reportInterval float64
-		logLevel       string
+		secretKey      string
+		rateLimit      int64
 	)
 
 	flag.Var(addr, "a", "Net address host:port")
 	flag.Float64Var(&pollInterval, "p", 2, "poll interval to collect metrics")
 	flag.Float64Var(&reportInterval, "r", 10, "report interval to report metrics to server")
-	flag.StringVar(&logLevel, "l", "info", "log level")
+	flag.StringVar(&secretKey, "k", "", "secret key to calculate hash")
+	flag.Int64Var(&rateLimit, "l", 1, "number of parallel workers")
 
 	flag.Parse()
 
@@ -60,6 +62,14 @@ func (cfg *AgentConfig) ParseFlags() {
 	if reportInterval > 0 {
 		cfg.ReportInterval = reportInterval
 	}
+
+	if secretKey != "" {
+		cfg.SecretKey = secretKey
+	}
+
+	if rateLimit > 0 {
+		cfg.RateLimit = rateLimit
+	}
 }
 
 func (cfg *ServerConfig) ParseFlags() {
@@ -69,14 +79,18 @@ func (cfg *ServerConfig) ParseFlags() {
 		storeInterval   int
 		fileStoragePath string
 		restore         bool
+		logLevel        string
 		databaseDSN     string
+		secretKey       string
 	)
 
 	flag.Var(addr, "a", "Net address host:port")
 	flag.IntVar(&storeInterval, "i", 300, "store interval in seconds")
 	flag.StringVar(&fileStoragePath, "f", "/tmp/metrics-db.json", "file path to store metrics")
+	flag.StringVar(&logLevel, "l", "info", "log level")
 	flag.BoolVar(&restore, "r", true, "restore metrics on start")
 	flag.StringVar(&databaseDSN, "d", "", "Database DSN")
+	flag.StringVar(&secretKey, "k", "", "secret key to calculate hash")
 
 	flag.Parse()
 
@@ -98,6 +112,12 @@ func (cfg *ServerConfig) ParseFlags() {
 		cfg.FileStoragePath = envValue
 	} else {
 		cfg.FileStoragePath = fileStoragePath
+	}
+
+	if envValue, exists := os.LookupEnv("LOG_LEVEL"); exists {
+		cfg.FileStoragePath = envValue
+	} else {
+		cfg.FileStoragePath = logLevel
 	}
 
 	if envValue, exists := os.LookupEnv("RESTORE"); exists {
@@ -122,5 +142,11 @@ func (cfg *ServerConfig) ParseFlags() {
 		} else {
 			cfg.DatabaseDSN = "host=localhost " + cfg.DatabaseDSN
 		}
+	}
+
+	if envValue, exists := os.LookupEnv("KEY"); exists {
+		cfg.SecretKey = envValue
+	} else {
+		cfg.SecretKey = secretKey
 	}
 }

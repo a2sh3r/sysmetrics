@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"github.com/a2sh3r/sysmetrics/internal/config"
 	"github.com/a2sh3r/sysmetrics/internal/constants"
 	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
 	"github.com/a2sh3r/sysmetrics/internal/server/services"
@@ -165,7 +166,10 @@ func TestHandler_GetMetric(t *testing.T) {
 				writer: tt.fields.service,
 			}
 
-			ts := httptest.NewServer(NewRouter(h))
+			cfg := &config.ServerConfig{
+				SecretKey: "test key",
+			}
+			ts := httptest.NewServer(NewRouter(h, cfg))
 			defer ts.Close()
 
 			req, err := http.NewRequest(tt.args.method, ts.URL+tt.args.url, nil)
@@ -270,7 +274,10 @@ func TestHandler_GetMetrics(t *testing.T) {
 				writer: tt.fields.service,
 			}
 
-			ts := httptest.NewServer(NewRouter(h))
+			cfg := &config.ServerConfig{
+				SecretKey: "test key",
+			}
+			ts := httptest.NewServer(NewRouter(h, cfg))
 			defer ts.Close()
 
 			req, err := http.NewRequest(tt.args.method, ts.URL+tt.args.url, nil)
@@ -417,7 +424,10 @@ func TestHandler_UpdateMetric(t *testing.T) {
 				writer: tt.fields.service,
 			}
 
-			ts := httptest.NewServer(NewRouter(h))
+			cfg := &config.ServerConfig{
+				SecretKey: "test key",
+			}
+			ts := httptest.NewServer(NewRouter(h, cfg))
 			defer ts.Close()
 
 			req, err := http.NewRequest(tt.args.method, ts.URL+tt.args.url, nil)
