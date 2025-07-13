@@ -3,8 +3,9 @@ package collector
 import (
 	"testing"
 
-	"github.com/a2sh3r/sysmetrics/internal/agent/metrics"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/a2sh3r/sysmetrics/internal/agent/metrics"
 )
 
 func TestCollector_CollectMetrics(t *testing.T) {

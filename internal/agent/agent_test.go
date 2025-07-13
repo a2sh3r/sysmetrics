@@ -5,10 +5,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/a2sh3r/sysmetrics/internal/agent/collector"
 	"github.com/a2sh3r/sysmetrics/internal/agent/sender"
 	"github.com/a2sh3r/sysmetrics/internal/config"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestAgent_Run(t *testing.T) {

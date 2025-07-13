@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"database/sql"
+
 	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
 )
 

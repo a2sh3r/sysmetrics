@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/a2sh3r/sysmetrics/internal/constants"
 	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestNewService(t *testing.T) {

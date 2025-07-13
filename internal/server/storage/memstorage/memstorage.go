@@ -4,9 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
+
 	"github.com/a2sh3r/sysmetrics/internal/constants"
 	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
-	"sync"
 )
 
 var (

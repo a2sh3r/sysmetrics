@@ -10,6 +10,8 @@ import (
 	"syscall"
 	"time"
 
+	"go.uber.org/zap"
+
 	"github.com/a2sh3r/sysmetrics/internal/config"
 	"github.com/a2sh3r/sysmetrics/internal/logger"
 	"github.com/a2sh3r/sysmetrics/internal/server/database"
@@ -19,7 +21,6 @@ import (
 	"github.com/a2sh3r/sysmetrics/internal/server/services"
 	"github.com/a2sh3r/sysmetrics/internal/server/storage/dbstorage"
 	"github.com/a2sh3r/sysmetrics/internal/server/storage/memstorage"
-	"go.uber.org/zap"
 )
 
 func RunServer(cfg *config.ServerConfig) error {

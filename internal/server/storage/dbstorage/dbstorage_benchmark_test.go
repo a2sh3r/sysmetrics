@@ -6,8 +6,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
 	_ "github.com/jackc/pgx/v5/stdlib"
+
+	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
 )
 
 func BenchmarkUpdateMetric(b *testing.B) {

@@ -5,9 +5,10 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/a2sh3r/sysmetrics/internal/constants"
 	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestMemStorage_GetMetric(t *testing.T) {

@@ -3,14 +3,16 @@ package handlers
 import (
 	"bytes"
 	"fmt"
-	"github.com/a2sh3r/sysmetrics/internal/constants"
-	"github.com/a2sh3r/sysmetrics/internal/logger"
-	"github.com/go-chi/chi/v5"
-	"go.uber.org/zap"
 	"io"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/go-chi/chi/v5"
+	"go.uber.org/zap"
+
+	"github.com/a2sh3r/sysmetrics/internal/constants"
+	"github.com/a2sh3r/sysmetrics/internal/logger"
 )
 
 func (h *Handler) GetMetric(w http.ResponseWriter, r *http.Request) {

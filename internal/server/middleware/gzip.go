@@ -2,12 +2,14 @@ package middleware
 
 import (
 	"compress/gzip"
-	"github.com/a2sh3r/sysmetrics/internal/logger"
-	"go.uber.org/zap"
 	"io"
 	"log"
 	"net/http"
 	"strings"
+
+	"go.uber.org/zap"
+
+	"github.com/a2sh3r/sysmetrics/internal/logger"
 )
 
 type gzipWriter struct {

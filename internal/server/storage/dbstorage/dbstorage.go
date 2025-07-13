@@ -6,9 +6,10 @@ import (
 	"errors"
 	"fmt"
 
+	"go.uber.org/zap"
+
 	"github.com/a2sh3r/sysmetrics/internal/logger"
 	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
-	"go.uber.org/zap"
 )
 
 type DBStorage struct {

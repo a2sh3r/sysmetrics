@@ -7,8 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/a2sh3r/sysmetrics/internal/agent/metrics"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/a2sh3r/sysmetrics/internal/agent/metrics"
 )
 
 func TestSender_SendMetrics(t *testing.T) {

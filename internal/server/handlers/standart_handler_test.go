@@ -7,11 +7,12 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/a2sh3r/sysmetrics/internal/constants"
 	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
 	"github.com/a2sh3r/sysmetrics/internal/server/services"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestHandler_GetMetric(t *testing.T) {

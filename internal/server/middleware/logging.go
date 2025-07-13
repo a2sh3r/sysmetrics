@@ -4,8 +4,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/a2sh3r/sysmetrics/internal/logger"
 	"go.uber.org/zap"
+
+	"github.com/a2sh3r/sysmetrics/internal/logger"
 )
 
 type loggingResponseWriter struct {

@@ -3,8 +3,9 @@ package handlers
 import (
 	"testing"
 
-	"github.com/a2sh3r/sysmetrics/internal/server/services"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/a2sh3r/sysmetrics/internal/server/services"
 )
 
 func TestNewHandler(t *testing.T) {

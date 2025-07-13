@@ -4,15 +4,17 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"github.com/a2sh3r/sysmetrics/internal/logger"
-	"github.com/jackc/pgerrcode"
-	"github.com/jackc/pgx/v5/pgconn"
-	"go.uber.org/zap"
 	"io"
 	"net"
 	"os"
 	"syscall"
 	"time"
+
+	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx/v5/pgconn"
+	"go.uber.org/zap"
+
+	"github.com/a2sh3r/sysmetrics/internal/logger"
 )
 
 type RetriableFunc func() error
