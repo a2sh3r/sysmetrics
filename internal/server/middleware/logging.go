@@ -1,10 +1,11 @@
 package middleware
 
 import (
-	"github.com/a2sh3r/sysmetrics/internal/logger"
-	"go.uber.org/zap"
 	"net/http"
 	"time"
+
+	"github.com/a2sh3r/sysmetrics/internal/logger"
+	"go.uber.org/zap"
 )
 
 type loggingResponseWriter struct {
@@ -24,6 +25,30 @@ func (r *loggingResponseWriter) WriteHeader(statusCode int) {
 	r.responseStatus = statusCode
 }
 
+type logEntry struct {
+	method   string
+	path     string
+	status   int
+	size     int
+	duration time.Duration
+}
+
+var logChan = make(chan logEntry, 1000)
+
+func init() {
+	go func() {
+		for entry := range logChan {
+			logger.Log.Info("HTTP request",
+				zap.String("method", entry.method),
+				zap.String("path", entry.path),
+				zap.Int("status", entry.status),
+				zap.Int("size", entry.size),
+				zap.Duration("duration", entry.duration),
+			)
+		}
+	}()
+}
+
 func NewLoggingMiddleware() func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -38,13 +63,16 @@ func NewLoggingMiddleware() func(next http.Handler) http.Handler {
 
 			duration := time.Since(start)
 
-			logger.Log.Info("HTTP request",
-				zap.String("method", r.Method),
-				zap.String("path", r.URL.Path),
-				zap.Int("status", lw.responseStatus),
-				zap.Int("size", lw.responseSize),
-				zap.Duration("duration", duration),
-			)
+			select {
+			case logChan <- logEntry{
+				method:   r.Method,
+				path:     r.URL.Path,
+				status:   lw.responseStatus,
+				size:     lw.responseSize,
+				duration: duration,
+			}:
+			default:
+			}
 		})
 	}
 }
