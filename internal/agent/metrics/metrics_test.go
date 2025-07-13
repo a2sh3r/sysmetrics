@@ -1,8 +1,9 @@
 package metrics
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewMetrics(t *testing.T) {
@@ -21,5 +22,11 @@ func TestNewMetrics(t *testing.T) {
 			assert.NotNil(t, got)
 			assert.IsType(t, tt.want, got)
 		})
+	}
+}
+
+func BenchmarkNewMetrics(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_ = NewMetrics()
 	}
 }

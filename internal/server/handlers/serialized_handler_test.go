@@ -5,6 +5,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"log"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
 	"github.com/a2sh3r/sysmetrics/internal/constants"
 	"github.com/a2sh3r/sysmetrics/internal/models"
 	"github.com/a2sh3r/sysmetrics/internal/server/middleware"
@@ -12,11 +18,6 @@ import (
 	"github.com/a2sh3r/sysmetrics/internal/server/services"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"io"
-	"log"
-	"net/http"
-	"net/http/httptest"
-	"testing"
 )
 
 func TestHandler_UpdateSerializedMetric(t *testing.T) {
@@ -365,6 +366,38 @@ func TestUpdateSerializedMetrics(t *testing.T) {
 	}
 }
 
+func BenchmarkUpdateSerializedMetric(b *testing.B) {
+	repo := &mockRepo{}
+	service := services.NewService(repo)
+	h := &Handler{reader: service, writer: service}
+	metric := models.Metrics{
+		ID:    "test",
+		MType: constants.MetricTypeGauge,
+		Value: float64Ptr(123.45),
+	}
+	body, _ := json.Marshal(metric)
+	for i := 0; i < b.N; i++ {
+		r := httptest.NewRequest("POST", "/update/", bytes.NewReader(body))
+		w := httptest.NewRecorder()
+		h.UpdateSerializedMetric(w, r)
+	}
+}
+
+func BenchmarkUpdateSerializedMetrics(b *testing.B) {
+	repo := &mockRepo{}
+	service := services.NewService(repo)
+	h := &Handler{reader: service, writer: service}
+	metrics := []models.Metrics{
+		{ID: "test", MType: constants.MetricTypeGauge, Value: float64Ptr(123.45)},
+	}
+	body, _ := json.Marshal(metrics)
+	for i := 0; i < b.N; i++ {
+		r := httptest.NewRequest("POST", "/updates/", bytes.NewReader(body))
+		w := httptest.NewRecorder()
+		h.UpdateSerializedMetrics(w, r)
+	}
+}
+
 func float64Ptr(f float64) *float64 {
 	return &f
 }
@@ -430,4 +463,22 @@ func (m *mockRepo) UpdateGaugeMetric(ctx context.Context, id string, value float
 
 func (m *mockRepo) UpdateCounterMetric(ctx context.Context, id string, delta int64) error {
 	return m.SaveMetric(ctx, id, delta, constants.MetricTypeCounter)
+}
+
+type mockService struct{}
+
+func (m *mockService) UpdateGaugeMetricWithRetry(ctx context.Context, id string, value float64) error {
+	return nil
+}
+func (m *mockService) UpdateCounterMetricWithRetry(ctx context.Context, id string, delta int64) error {
+	return nil
+}
+func (m *mockService) UpdateMetricsBatchWithRetry(ctx context.Context, metrics map[string]repositories.Metric) error {
+	return nil
+}
+func (m *mockService) GetMetricWithRetry(ctx context.Context, id string) (repositories.Metric, error) {
+	return repositories.Metric{}, nil
+}
+func (m *mockService) GetMetricsWithRetry(ctx context.Context) (map[string]repositories.Metric, error) {
+	return map[string]repositories.Metric{}, nil
 }
