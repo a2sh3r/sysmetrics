@@ -3,12 +3,13 @@ package handlers
 import (
 	"errors"
 	"fmt"
-	"github.com/a2sh3r/sysmetrics/internal/constants"
-	"github.com/a2sh3r/sysmetrics/internal/models"
-	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/a2sh3r/sysmetrics/internal/constants"
+	"github.com/a2sh3r/sysmetrics/internal/models"
+	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
 )
 
 func validateParams(params ...string) error {

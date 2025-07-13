@@ -1,9 +1,11 @@
 package handlers
 
 import (
-	"github.com/a2sh3r/sysmetrics/internal/server/middleware"
-	"github.com/go-chi/chi/v5"
 	"net/http"
+
+	"github.com/go-chi/chi/v5"
+
+	"github.com/a2sh3r/sysmetrics/internal/server/middleware"
 )
 
 func NewRouter(handler *Handler) chi.Router {

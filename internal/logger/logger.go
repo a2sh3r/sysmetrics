@@ -23,3 +23,21 @@ func Initialize(level string) error {
 
 	return nil
 }
+
+func AsyncInfo(msg string, fields ...zap.Field) {
+	go func() {
+		Log.Info(msg, fields...)
+	}()
+}
+
+func AsyncWarn(msg string, fields ...zap.Field) {
+	go func() {
+		Log.Warn(msg, fields...)
+	}()
+}
+
+func AsyncError(msg string, fields ...zap.Field) {
+	go func() {
+		Log.Error(msg, fields...)
+	}()
+}

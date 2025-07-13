@@ -4,17 +4,19 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/a2sh3r/sysmetrics/internal/constants"
-	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
 	"log"
 	"os"
 	"path/filepath"
 	"sync"
 	"time"
 
+	"github.com/a2sh3r/sysmetrics/internal/constants"
+	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
+
+	"go.uber.org/zap"
+
 	"github.com/a2sh3r/sysmetrics/internal/logger"
 	"github.com/a2sh3r/sysmetrics/internal/server/storage/memstorage"
-	"go.uber.org/zap"
 )
 
 type RConfig struct {

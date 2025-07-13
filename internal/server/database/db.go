@@ -3,9 +3,11 @@ package database
 import (
 	"database/sql"
 	"fmt"
+
+	"go.uber.org/zap"
+
 	"github.com/a2sh3r/sysmetrics/internal/config"
 	"github.com/a2sh3r/sysmetrics/internal/logger"
-	"go.uber.org/zap"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 )

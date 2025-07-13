@@ -3,9 +3,11 @@ package repositories
 import (
 	"context"
 	"fmt"
-	"github.com/a2sh3r/sysmetrics/internal/constants"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/a2sh3r/sysmetrics/internal/constants"
 )
 
 type mockStorage struct {

@@ -2,12 +2,13 @@ package agent
 
 import (
 	"context"
+	"log"
+	"time"
+
 	"github.com/a2sh3r/sysmetrics/internal/agent/collector"
 	"github.com/a2sh3r/sysmetrics/internal/agent/metrics"
 	"github.com/a2sh3r/sysmetrics/internal/agent/sender"
 	"github.com/a2sh3r/sysmetrics/internal/config"
-	"log"
-	"time"
 )
 
 type Agent struct {
