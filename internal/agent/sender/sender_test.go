@@ -2,12 +2,13 @@ package sender
 
 import (
 	"context"
-	"github.com/a2sh3r/sysmetrics/internal/agent/metrics"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/a2sh3r/sysmetrics/internal/agent/metrics"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSender_SendMetrics(t *testing.T) {
@@ -83,5 +84,14 @@ func TestSender_SendMetrics(t *testing.T) {
 				assert.NoError(t, err)
 			}
 		})
+	}
+}
+
+func BenchmarkSendMetrics(b *testing.B) {
+	s := NewSender("http://localhost:8080")
+	ctx := context.Background()
+	metricsBatch := []*metrics.Metrics{metrics.NewMetrics()}
+	for i := 0; i < b.N; i++ {
+		_ = s.SendMetrics(ctx, metricsBatch)
 	}
 }

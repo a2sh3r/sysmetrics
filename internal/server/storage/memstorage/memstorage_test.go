@@ -2,11 +2,12 @@ package memstorage
 
 import (
 	"context"
+	"sync"
+	"testing"
+
 	"github.com/a2sh3r/sysmetrics/internal/constants"
 	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
 	"github.com/stretchr/testify/assert"
-	"sync"
-	"testing"
 )
 
 func TestMemStorage_GetMetric(t *testing.T) {
@@ -426,5 +427,124 @@ func TestNewMemStorage(t *testing.T) {
 			assert.NotNil(t, got)
 			assert.NotNil(t, got.metrics)
 		})
+	}
+}
+
+func TestMemStorage_UpdateMetricsBatch(t *testing.T) {
+	ctx := context.Background()
+	type fields struct {
+		metrics map[string]repositories.Metric
+	}
+	type args struct {
+		metrics map[string]repositories.Metric
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    map[string]repositories.Metric
+		wantErr bool
+	}{
+		{
+			name: "Batch update: add new metrics",
+			fields: fields{
+				metrics: map[string]repositories.Metric{},
+			},
+			args: args{
+				metrics: map[string]repositories.Metric{
+					"gauge1":   {Type: constants.MetricTypeGauge, Value: 1.23},
+					"counter1": {Type: constants.MetricTypeCounter, Value: int64(10)},
+				},
+			},
+			want: map[string]repositories.Metric{
+				"gauge1":   {Type: constants.MetricTypeGauge, Value: 1.23},
+				"counter1": {Type: constants.MetricTypeCounter, Value: int64(10)},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Batch update: update existing counter",
+			fields: fields{
+				metrics: map[string]repositories.Metric{
+					"counter1": {Type: constants.MetricTypeCounter, Value: int64(5)},
+				},
+			},
+			args: args{
+				metrics: map[string]repositories.Metric{
+					"counter1": {Type: constants.MetricTypeCounter, Value: int64(7)},
+				},
+			},
+			want: map[string]repositories.Metric{
+				"counter1": {Type: constants.MetricTypeCounter, Value: int64(12)},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Batch update: update existing gauge",
+			fields: fields{
+				metrics: map[string]repositories.Metric{
+					"gauge1": {Type: constants.MetricTypeGauge, Value: 2.34},
+				},
+			},
+			args: args{
+				metrics: map[string]repositories.Metric{
+					"gauge1": {Type: constants.MetricTypeGauge, Value: 3.45},
+				},
+			},
+			want: map[string]repositories.Metric{
+				"gauge1": {Type: constants.MetricTypeGauge, Value: 3.45},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Batch update: invalid metric type",
+			fields: fields{
+				metrics: map[string]repositories.Metric{},
+			},
+			args: args{
+				metrics: map[string]repositories.Metric{
+					"bad": {Type: "invalid", Value: 1},
+				},
+			},
+			want:    map[string]repositories.Metric{},
+			wantErr: true,
+		},
+		{
+			name: "Batch update: empty metric name",
+			fields: fields{
+				metrics: map[string]repositories.Metric{},
+			},
+			args: args{
+				metrics: map[string]repositories.Metric{
+					"": {Type: constants.MetricTypeGauge, Value: 1.23},
+				},
+			},
+			want:    map[string]repositories.Metric{},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ms := &MemStorage{
+				metrics: tt.fields.metrics,
+				mu:      sync.RWMutex{},
+			}
+			err := ms.UpdateMetricsBatch(ctx, tt.args.metrics)
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.want, ms.metrics)
+			}
+		})
+	}
+}
+
+func BenchmarkUpdateMetric(b *testing.B) {
+	ms := NewMemStorage()
+	ctx := context.Background()
+	metric := repositories.Metric{Type: "gauge", Value: float64(42)}
+	for i := 0; i < b.N; i++ {
+		_ = ms.UpdateMetric(ctx, "test_metric", metric)
 	}
 }
