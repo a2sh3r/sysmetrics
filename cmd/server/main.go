@@ -1,10 +1,12 @@
 package main
 
 import (
+	"log"
+	_ "net/http/pprof"
+
 	"github.com/a2sh3r/sysmetrics/internal/config"
 	"github.com/a2sh3r/sysmetrics/internal/logger"
 	"github.com/a2sh3r/sysmetrics/internal/server/startup"
-	"log"
 )
 
 func main() {

@@ -2,12 +2,13 @@ package handlers
 
 import (
 	"encoding/json"
+	"net/http"
+
 	"github.com/a2sh3r/sysmetrics/internal/constants"
 	"github.com/a2sh3r/sysmetrics/internal/logger"
 	"github.com/a2sh3r/sysmetrics/internal/models"
 	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
 	"go.uber.org/zap"
-	"net/http"
 )
 
 func (h *Handler) UpdateSerializedMetric(w http.ResponseWriter, r *http.Request) {

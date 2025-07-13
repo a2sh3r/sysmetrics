@@ -4,6 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
 	"github.com/a2sh3r/sysmetrics/internal/config"
 	"github.com/a2sh3r/sysmetrics/internal/logger"
 	"github.com/a2sh3r/sysmetrics/internal/server/database"
@@ -14,11 +20,6 @@ import (
 	"github.com/a2sh3r/sysmetrics/internal/server/storage/dbstorage"
 	"github.com/a2sh3r/sysmetrics/internal/server/storage/memstorage"
 	"go.uber.org/zap"
-	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
 )
 
 func RunServer(cfg *config.ServerConfig) error {
@@ -69,9 +70,13 @@ func RunServer(cfg *config.ServerConfig) error {
 		}()
 	}
 
+	srvMux := http.NewServeMux()
+	srvMux.Handle("/debug/pprof/", http.DefaultServeMux)
+	srvMux.Handle("/", handlers.NewRouter(handler))
+
 	srv := &http.Server{
 		Addr:    cfg.Address,
-		Handler: handlers.NewRouter(handler),
+		Handler: srvMux,
 	}
 
 	quit := make(chan os.Signal, 1)
