@@ -7,7 +7,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/a2sh3r/sysmetrics/internal/agent/collector"
 	"github.com/a2sh3r/sysmetrics/internal/agent/metrics"
 	"github.com/a2sh3r/sysmetrics/internal/agent/sender"
 	"github.com/a2sh3r/sysmetrics/internal/config"

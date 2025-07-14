@@ -7,9 +7,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/a2sh3r/sysmetrics/internal/agent/metrics"
 	"github.com/a2sh3r/sysmetrics/internal/server/middleware"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestSender_SendMetrics(t *testing.T) {
@@ -103,7 +104,7 @@ func TestSender_SendMetrics(t *testing.T) {
 }
 
 func BenchmarkSendMetrics(b *testing.B) {
-	s := NewSender("http://localhost:8080")
+	s := NewSender("http://localhost:8080", "test")
 	ctx := context.Background()
 	metricsBatch := []*metrics.Metrics{metrics.NewMetrics()}
 	for i := 0; i < b.N; i++ {

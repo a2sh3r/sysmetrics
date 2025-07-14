@@ -2,12 +2,14 @@ package middleware
 
 import (
 	"bytes"
+	"io"
+	"net/http"
+
+	"go.uber.org/zap"
+
 	"github.com/a2sh3r/sysmetrics/internal/config"
 	"github.com/a2sh3r/sysmetrics/internal/hash"
 	"github.com/a2sh3r/sysmetrics/internal/logger"
-	"go.uber.org/zap"
-	"io"
-	"net/http"
 )
 
 const HashHeader = "HashSHA256"
