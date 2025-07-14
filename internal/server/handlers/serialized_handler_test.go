@@ -473,21 +473,3 @@ func (m *mockRepo) UpdateGaugeMetric(ctx context.Context, id string, value float
 func (m *mockRepo) UpdateCounterMetric(ctx context.Context, id string, delta int64) error {
 	return m.SaveMetric(ctx, id, delta, constants.MetricTypeCounter)
 }
-
-type mockService struct{}
-
-func (m *mockService) UpdateGaugeMetricWithRetry(ctx context.Context, id string, value float64) error {
-	return nil
-}
-func (m *mockService) UpdateCounterMetricWithRetry(ctx context.Context, id string, delta int64) error {
-	return nil
-}
-func (m *mockService) UpdateMetricsBatchWithRetry(ctx context.Context, metrics map[string]repositories.Metric) error {
-	return nil
-}
-func (m *mockService) GetMetricWithRetry(ctx context.Context, id string) (repositories.Metric, error) {
-	return repositories.Metric{}, nil
-}
-func (m *mockService) GetMetricsWithRetry(ctx context.Context) (map[string]repositories.Metric, error) {
-	return map[string]repositories.Metric{}, nil
-}
