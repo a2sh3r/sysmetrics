@@ -2,9 +2,10 @@ package agent
 
 import (
 	"context"
-	"github.com/a2sh3r/sysmetrics/internal/agent/metrics"
 	"log"
 	"sync"
+
+	"github.com/a2sh3r/sysmetrics/internal/agent/metrics"
 )
 
 type MetricsWorker struct {

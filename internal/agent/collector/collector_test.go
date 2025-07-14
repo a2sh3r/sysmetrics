@@ -1,9 +1,11 @@
 package collector
 
 import (
-	"github.com/a2sh3r/sysmetrics/internal/agent/metrics"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/a2sh3r/sysmetrics/internal/agent/metrics"
 )
 
 func TestCollector_CollectMetrics(t *testing.T) {
@@ -54,5 +56,12 @@ func TestNewCollector(t *testing.T) {
 			assert.NotNil(t, got)
 			assert.IsType(t, tt.want, got)
 		})
+	}
+}
+
+func BenchmarkCollectMetrics(b *testing.B) {
+	c := NewCollector()
+	for i := 0; i < b.N; i++ {
+		_ = c.CollectMetrics()
 	}
 }

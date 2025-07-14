@@ -1,17 +1,20 @@
 package handlers
 
 import (
-	"github.com/a2sh3r/sysmetrics/internal/config"
-	"github.com/a2sh3r/sysmetrics/internal/constants"
-	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
-	"github.com/a2sh3r/sysmetrics/internal/server/services"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/a2sh3r/sysmetrics/internal/config"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/a2sh3r/sysmetrics/internal/constants"
+	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
+	"github.com/a2sh3r/sysmetrics/internal/server/services"
 )
 
 func TestHandler_GetMetric(t *testing.T) {
@@ -449,5 +452,16 @@ func TestHandler_UpdateMetric(t *testing.T) {
 			assert.Equal(t, tt.want.contentType, res.Header.Get("Content-Type"))
 			assert.Equal(t, tt.want.response, string(resBody))
 		})
+	}
+}
+
+func BenchmarkUpdateMetric(b *testing.B) {
+	repo := &mockRepo{}
+	service := services.NewService(repo)
+	h := &Handler{reader: service, writer: service}
+	r, _ := http.NewRequest("POST", "/update/gauge/test/123.45", nil)
+	w := httptest.NewRecorder()
+	for i := 0; i < b.N; i++ {
+		h.UpdateMetric(w, r)
 	}
 }

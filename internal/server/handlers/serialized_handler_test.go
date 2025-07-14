@@ -5,19 +5,22 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/a2sh3r/sysmetrics/internal/config"
-	"github.com/a2sh3r/sysmetrics/internal/constants"
-	"github.com/a2sh3r/sysmetrics/internal/models"
-	"github.com/a2sh3r/sysmetrics/internal/server/middleware"
-	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
-	"github.com/a2sh3r/sysmetrics/internal/server/services"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"io"
 	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/a2sh3r/sysmetrics/internal/config"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/a2sh3r/sysmetrics/internal/constants"
+	"github.com/a2sh3r/sysmetrics/internal/models"
+	"github.com/a2sh3r/sysmetrics/internal/server/middleware"
+	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
+	"github.com/a2sh3r/sysmetrics/internal/server/services"
 )
 
 func TestHandler_UpdateSerializedMetric(t *testing.T) {
@@ -369,6 +372,38 @@ func TestUpdateSerializedMetrics(t *testing.T) {
 			handler.UpdateSerializedMetrics(recorder, req)
 			assert.Equal(t, tt.wantStatusCode, recorder.Code)
 		})
+	}
+}
+
+func BenchmarkUpdateSerializedMetric(b *testing.B) {
+	repo := &mockRepo{}
+	service := services.NewService(repo)
+	h := &Handler{reader: service, writer: service}
+	metric := models.Metrics{
+		ID:    "test",
+		MType: constants.MetricTypeGauge,
+		Value: float64Ptr(123.45),
+	}
+	body, _ := json.Marshal(metric)
+	for i := 0; i < b.N; i++ {
+		r := httptest.NewRequest("POST", "/update/", bytes.NewReader(body))
+		w := httptest.NewRecorder()
+		h.UpdateSerializedMetric(w, r)
+	}
+}
+
+func BenchmarkUpdateSerializedMetrics(b *testing.B) {
+	repo := &mockRepo{}
+	service := services.NewService(repo)
+	h := &Handler{reader: service, writer: service}
+	metrics := []models.Metrics{
+		{ID: "test", MType: constants.MetricTypeGauge, Value: float64Ptr(123.45)},
+	}
+	body, _ := json.Marshal(metrics)
+	for i := 0; i < b.N; i++ {
+		r := httptest.NewRequest("POST", "/updates/", bytes.NewReader(body))
+		w := httptest.NewRecorder()
+		h.UpdateSerializedMetrics(w, r)
 	}
 }
 

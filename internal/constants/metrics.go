@@ -1,6 +1,8 @@
+// Package constants defines constant values for metric types.
 package constants
 
-const (
-	MetricTypeGauge   = "gauge"
-	MetricTypeCounter = "counter"
-)
+// MetricTypeGauge represents a gauge metric type.
+const MetricTypeGauge = "gauge"
+
+// MetricTypeCounter represents a counter metric type.
+const MetricTypeCounter = "counter"

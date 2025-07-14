@@ -1,12 +1,14 @@
+// Package memstorage provides an in-memory implementation of the Storage interface.
 package memstorage
 
 import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
+
 	"github.com/a2sh3r/sysmetrics/internal/constants"
 	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
-	"sync"
 )
 
 var (
@@ -17,17 +19,20 @@ var (
 	ErrMetricInvalidName = errors.New("invalid metric error")
 )
 
+// MemStorage implements in-memory storage for metrics.
 type MemStorage struct {
 	metrics map[string]repositories.Metric
 	mu      sync.RWMutex
 }
 
+// NewMemStorage creates a new MemStorage instance.
 func NewMemStorage() *MemStorage {
 	return &MemStorage{
 		metrics: make(map[string]repositories.Metric),
 	}
 }
 
+// GetMetric retrieves a metric from memory storage.
 func (ms *MemStorage) GetMetric(ctx context.Context, metricName string) (repositories.Metric, error) {
 	if ctx.Err() != nil {
 		return repositories.Metric{}, ctx.Err()
@@ -50,6 +55,7 @@ func (ms *MemStorage) GetMetric(ctx context.Context, metricName string) (reposit
 	return repositories.Metric{}, ErrMetricNotFound
 }
 
+// GetMetrics retrieves all metrics from memory storage.
 func (ms *MemStorage) GetMetrics(ctx context.Context) (map[string]repositories.Metric, error) {
 	if ctx.Err() != nil {
 		return nil, ctx.Err()

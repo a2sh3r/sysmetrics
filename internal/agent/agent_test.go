@@ -2,12 +2,14 @@ package agent
 
 import (
 	"context"
+	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
+
 	"github.com/a2sh3r/sysmetrics/internal/agent/metrics"
 	"github.com/a2sh3r/sysmetrics/internal/agent/sender"
 	"github.com/a2sh3r/sysmetrics/internal/config"
-	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
 )
 
 func TestAgent_Run(t *testing.T) {
@@ -105,5 +107,21 @@ func TestNewAgent(t *testing.T) {
 			assert.NotNil(t, got.metrics)
 			assert.NotNil(t, got.sender)
 		})
+	}
+}
+
+func BenchmarkAgentRun(b *testing.B) {
+	cfg := &config.AgentConfig{
+		Address:        "http://localhost:8080",
+		PollInterval:   2,
+		ReportInterval: 10,
+	}
+	agent := NewAgent(cfg)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		go agent.Run(ctx)
+		cancel()
 	}
 }
