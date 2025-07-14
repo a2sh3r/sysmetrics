@@ -1,3 +1,4 @@
+// Package restore provides functionality for periodic saving and restoring of metrics.
 package restore
 
 import (
@@ -19,6 +20,7 @@ import (
 	"github.com/a2sh3r/sysmetrics/internal/server/storage/memstorage"
 )
 
+// RConfig holds configuration for the restore service.
 type RConfig struct {
 	Interval int64
 	FilePath string
@@ -26,13 +28,16 @@ type RConfig struct {
 	mu       sync.Mutex
 }
 
+// metricData represents the serialized form of a metric for file storage.
 type metricData struct {
 	Type  string      `json:"type"`
 	Value interface{} `json:"value"`
 }
 
+// ErrRestoreFromFile is returned when restoring from file fails.
 var ErrRestoreFromFile = errors.New("error restoring from file")
 
+// NewRestoreConfig creates a new RConfig for the restore service.
 func NewRestoreConfig(interval int64, filePath string, storage repositories.Storage) *RConfig {
 	return &RConfig{
 		Interval: interval,
@@ -41,6 +46,7 @@ func NewRestoreConfig(interval int64, filePath string, storage repositories.Stor
 	}
 }
 
+// StartRestore starts the periodic saving of metrics to a file.
 func (b *RConfig) StartRestore(ctx context.Context) error {
 	logger.Log.Info("Starting restore service",
 		zap.Int64("interval_seconds", b.Interval),
@@ -64,6 +70,7 @@ func (b *RConfig) StartRestore(ctx context.Context) error {
 	}
 }
 
+// SaveToFile saves all metrics to the configured file.
 func (b *RConfig) SaveToFile() error {
 	ctx := context.Background()
 	b.mu.Lock()
@@ -106,6 +113,7 @@ func (b *RConfig) SaveToFile() error {
 	return nil
 }
 
+// RestoreFromFile loads metrics from the specified file into a new MemStorage.
 func RestoreFromFile(filename string) (*memstorage.MemStorage, error) {
 	ctx := context.Background()
 	if _, err := os.Stat(filename); os.IsNotExist(err) {

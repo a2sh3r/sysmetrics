@@ -1,3 +1,4 @@
+// Package middleware provides HTTP middleware for the server, including request logging.
 package middleware
 
 import (
@@ -9,18 +10,21 @@ import (
 	"github.com/a2sh3r/sysmetrics/internal/logger"
 )
 
+// loggingResponseWriter wraps http.ResponseWriter to capture response status and size.
 type loggingResponseWriter struct {
 	http.ResponseWriter
 	responseStatus int
 	responseSize   int
 }
 
+// Write writes the response and tracks the size.
 func (r *loggingResponseWriter) Write(b []byte) (int, error) {
 	size, err := r.ResponseWriter.Write(b)
 	r.responseSize += size
 	return size, err
 }
 
+// WriteHeader writes the response status code.
 func (r *loggingResponseWriter) WriteHeader(statusCode int) {
 	r.ResponseWriter.WriteHeader(statusCode)
 	r.responseStatus = statusCode
@@ -50,6 +54,7 @@ func init() {
 	}()
 }
 
+// NewLoggingMiddleware returns a middleware that logs HTTP requests.
 func NewLoggingMiddleware() func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

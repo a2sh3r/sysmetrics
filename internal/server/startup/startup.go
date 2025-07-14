@@ -1,3 +1,4 @@
+// Package startup provides the main server startup logic.
 package startup
 
 import (
@@ -23,6 +24,7 @@ import (
 	"github.com/a2sh3r/sysmetrics/internal/server/storage/memstorage"
 )
 
+// RunServer starts the HTTP server with the provided configuration.
 func RunServer(cfg *config.ServerConfig) error {
 
 	var storage repositories.Storage

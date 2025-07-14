@@ -9,6 +9,7 @@ import (
 	"github.com/a2sh3r/sysmetrics/internal/server/middleware"
 )
 
+// NewRouter creates a new chi.Router with all routes and middleware for the metrics server.
 func NewRouter(handler *Handler, cfg *config.ServerConfig) chi.Router {
 	r := chi.NewRouter()
 

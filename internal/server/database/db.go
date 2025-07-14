@@ -1,3 +1,4 @@
+// Package database provides functions for initializing and closing the database connection.
 package database
 
 import (
@@ -12,6 +13,7 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
+// InitDB initializes a new database connection using the provided server configuration.
 func InitDB(cfg *config.ServerConfig) (*sql.DB, error) {
 	db, err := sql.Open("pgx", cfg.DatabaseDSN)
 	if err != nil {
@@ -27,6 +29,7 @@ func InitDB(cfg *config.ServerConfig) (*sql.DB, error) {
 	return db, nil
 }
 
+// CloseDB closes the provided database connection and logs the result.
 func CloseDB(db *sql.DB) {
 	if err := db.Close(); err != nil {
 		logger.Log.Error("Database connection closed", zap.Error(err))

@@ -1,3 +1,4 @@
+// Package middleware provides HTTP middleware for the server, including gzip compression.
 package middleware
 
 import (
@@ -12,15 +13,18 @@ import (
 	"github.com/a2sh3r/sysmetrics/internal/logger"
 )
 
+// gzipWriter wraps http.ResponseWriter and compresses the response using gzip.
 type gzipWriter struct {
 	http.ResponseWriter
 	writer io.Writer
 }
 
+// Write writes compressed data to the response.
 func (w *gzipWriter) Write(b []byte) (int, error) {
 	return w.writer.Write(b)
 }
 
+// NewGzipMiddleware returns a middleware that transparently compresses and decompresses HTTP requests and responses using gzip.
 func NewGzipMiddleware() func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

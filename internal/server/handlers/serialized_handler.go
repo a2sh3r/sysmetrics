@@ -12,6 +12,7 @@ import (
 	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
 )
 
+// UpdateSerializedMetric handles POST requests to update a metric using a JSON body.
 func (h *Handler) UpdateSerializedMetric(w http.ResponseWriter, r *http.Request) {
 	var m models.Metrics
 	if err := json.NewDecoder(r.Body).Decode(&m); err != nil {
@@ -65,6 +66,7 @@ func (h *Handler) UpdateSerializedMetric(w http.ResponseWriter, r *http.Request)
 	}
 }
 
+// GetSerializedMetric handles POST requests to get a metric value using a JSON body.
 func (h *Handler) GetSerializedMetric(w http.ResponseWriter, r *http.Request) {
 	var m models.Metrics
 	if err := json.NewDecoder(r.Body).Decode(&m); err != nil {
@@ -96,6 +98,7 @@ func (h *Handler) GetSerializedMetric(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// UpdateSerializedMetrics handles POST requests to update multiple metrics using a JSON array.
 func (h *Handler) UpdateSerializedMetrics(w http.ResponseWriter, r *http.Request) {
 	var metrics []models.Metrics
 	if err := json.NewDecoder(r.Body).Decode(&metrics); err != nil {

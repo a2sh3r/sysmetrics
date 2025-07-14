@@ -1,3 +1,4 @@
+// Package middleware provides HTTP middleware for the server, including hash verification.
 package middleware
 
 import (
@@ -14,6 +15,7 @@ import (
 
 const HashHeader = "HashSHA256"
 
+// NewHashMiddleware returns a middleware that verifies and sets a hash header for requests and responses.
 func NewHashMiddleware(cfg *config.ServerConfig) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -58,6 +60,7 @@ func NewHashMiddleware(cfg *config.ServerConfig) func(next http.Handler) http.Ha
 	}
 }
 
+// hashResponseWriter wraps http.ResponseWriter and adds hash header logic.
 type hashResponseWriter struct {
 	http.ResponseWriter
 	secretKey     string
@@ -66,6 +69,7 @@ type hashResponseWriter struct {
 	statusCode    int
 }
 
+// Write writes the response and sets the hash header if a secret key is provided.
 func (rw *hashResponseWriter) Write(b []byte) (int, error) {
 	rw.body = b
 	if rw.secretKey != "" {
@@ -75,6 +79,7 @@ func (rw *hashResponseWriter) Write(b []byte) (int, error) {
 	return rw.ResponseWriter.Write(b)
 }
 
+// WriteHeader writes the HTTP status code to the response and ensures it is only written once.
 func (rw *hashResponseWriter) WriteHeader(statusCode int) {
 	if !rw.headerWritten {
 		rw.statusCode = statusCode

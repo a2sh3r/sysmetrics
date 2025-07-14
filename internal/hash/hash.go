@@ -1,3 +1,4 @@
+// Package hash provides functions for calculating and verifying hashes.
 package hash
 
 import (
@@ -6,6 +7,7 @@ import (
 	"fmt"
 )
 
+// CalculateHash calculates a SHA256 hash for the given data and key.
 func CalculateHash(data string, key string) string {
 	if key == "" {
 		return ""
@@ -20,6 +22,7 @@ func CalculateHash(data string, key string) string {
 	return hex.EncodeToString(hashBytes)
 }
 
+// VerifyHash verifies that the given hash matches the data and key.
 func VerifyHash(data string, key string, hash string) error {
 	if key == "" {
 		return nil
