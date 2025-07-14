@@ -8,7 +8,9 @@ import (
 	"github.com/a2sh3r/sysmetrics/internal/agent/metrics"
 	"github.com/a2sh3r/sysmetrics/internal/agent/utils"
 	"github.com/a2sh3r/sysmetrics/internal/constants"
+	"github.com/a2sh3r/sysmetrics/internal/hash"
 	"github.com/a2sh3r/sysmetrics/internal/models"
+	"github.com/a2sh3r/sysmetrics/internal/server/middleware"
 	"io"
 	"log"
 	"net/http"
@@ -19,12 +21,14 @@ import (
 type Sender struct {
 	serverAddress string
 	client        *http.Client
+	secretKey     string
 }
 
-func NewSender(serverAddress string) *Sender {
+func NewSender(serverAddress string, secretKey string) *Sender {
 	return &Sender{
 		serverAddress: serverAddress,
 		client:        &http.Client{},
+		secretKey:     secretKey,
 	}
 }
 
@@ -54,6 +58,18 @@ func toModelMetrics(m *metrics.Metrics) []*models.Metrics {
 				Delta: &iv,
 				Value: nil,
 			})
+		case reflect.Slice:
+			if fieldName == "CPUUtilization" {
+				for j := 0; j < field.Len(); j++ {
+					fv := field.Index(j).Float()
+					result = append(result, &models.Metrics{
+						ID:    fmt.Sprintf("CPUutilization%d", j+1),
+						MType: constants.MetricTypeGauge,
+						Delta: nil,
+						Value: &fv,
+					})
+				}
+			}
 		default:
 			panic("unhandled default case")
 		}
@@ -80,6 +96,11 @@ func (s *Sender) sendMetricsBatchJSON(ctx context.Context, metrics []*models.Met
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Content-Encoding", "gzip")
+
+	if s.secretKey != "" {
+		calculateHash := hash.CalculateHash(string(data), s.secretKey)
+		req.Header.Set(middleware.HashHeader, calculateHash)
+	}
 
 	resp, err := s.client.Do(req)
 	if err != nil {

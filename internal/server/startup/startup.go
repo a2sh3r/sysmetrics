@@ -71,7 +71,7 @@ func RunServer(cfg *config.ServerConfig) error {
 
 	srv := &http.Server{
 		Addr:    cfg.Address,
-		Handler: handlers.NewRouter(handler),
+		Handler: handlers.NewRouter(handler, cfg),
 	}
 
 	quit := make(chan os.Signal, 1)

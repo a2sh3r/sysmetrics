@@ -9,6 +9,8 @@ type AgentConfig struct {
 	PollInterval   float64 `env:"POLL_INTERVAL" envDefault:"2"`
 	ReportInterval float64 `env:"REPORT_INTERVAL" envDefault:"10"`
 	Address        string  `env:"ADDRESS" envDefault:"localhost:8080"`
+	SecretKey      string  `env:"KEY" envDefault:""`
+	RateLimit      int64   `env:"RATE_LIMIT" envDefault:"1"`
 }
 
 type ServerConfig struct {
@@ -18,6 +20,7 @@ type ServerConfig struct {
 	FileStoragePath string `env:"FILE_STORAGE_PATH" envDefault:"/tmp/metrics-db.json"`
 	Restore         bool   `env:"RESTORE" envDefault:"true"`
 	DatabaseDSN     string `env:"DATABASE_DSN" envDefault:""`
+	SecretKey       string `env:"KEY" envDefault:""`
 }
 
 func NewAgentConfig() (*AgentConfig, error) {
