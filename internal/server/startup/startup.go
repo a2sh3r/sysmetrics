@@ -73,7 +73,7 @@ func RunServer(cfg *config.ServerConfig) error {
 
 	srvMux := http.NewServeMux()
 	srvMux.Handle("/debug/pprof/", http.DefaultServeMux)
-	srvMux.Handle("/", handlers.NewRouter(handler))
+	srvMux.Handle("/", handlers.NewRouter(handler, cfg))
 
 	srv := &http.Server{
 		Addr:    cfg.Address,

@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/a2sh3r/sysmetrics/internal/agent/metrics"
+	"github.com/a2sh3r/sysmetrics/internal/server/middleware"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSender_SendMetrics(t *testing.T) {
@@ -17,12 +17,14 @@ func TestSender_SendMetrics(t *testing.T) {
 	tests := []struct {
 		name          string
 		serverAddress string
+		secretKey     string
 		metricsBatch  []*metrics.Metrics
 		wantErr       bool
 	}{
 		{
 			name:          "valid metrics with PollCount and HeapAlloc",
 			serverAddress: "http://localhost:8080",
+			secretKey:     "test key",
 			metricsBatch: []*metrics.Metrics{
 				{
 					PollCount: int64(1),
@@ -34,18 +36,21 @@ func TestSender_SendMetrics(t *testing.T) {
 		{
 			name:          "empty metrics batch",
 			serverAddress: "http://localhost:8080",
+			secretKey:     "test key",
 			metricsBatch:  []*metrics.Metrics{},
 			wantErr:       true,
 		},
 		{
 			name:          "nil metrics batch",
 			serverAddress: "http://localhost:8080",
+			secretKey:     "test key",
 			metricsBatch:  nil,
 			wantErr:       true,
 		},
 		{
 			name:          "invalid server address",
 			serverAddress: "http://invalid-address",
+			secretKey:     "test key",
 			metricsBatch: []*metrics.Metrics{
 				{
 					PollCount: int64(1),
@@ -65,6 +70,14 @@ func TestSender_SendMetrics(t *testing.T) {
 				if r.URL.Path != "/updates/" {
 					t.Errorf("expected path /updates/, got %s", r.URL.Path)
 				}
+
+				if tt.secretKey != "" {
+					gotHash := r.Header.Get(middleware.HashHeader)
+					if gotHash == "" {
+						t.Error("expected hash in request headers")
+					}
+				}
+
 				w.WriteHeader(http.StatusOK)
 			}))
 			defer srv.Close()
@@ -76,6 +89,7 @@ func TestSender_SendMetrics(t *testing.T) {
 			s := &Sender{
 				serverAddress: tt.serverAddress,
 				client:        &http.Client{Timeout: 5 * time.Second},
+				secretKey:     tt.secretKey,
 			}
 
 			err := s.SendMetrics(ctx, tt.metricsBatch)

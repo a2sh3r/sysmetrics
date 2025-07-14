@@ -18,6 +18,7 @@ func TestNewConfig(t *testing.T) {
 				PollInterval:   2,
 				ReportInterval: 10,
 				Address:        "http://localhost:8080",
+				RateLimit:      1,
 			},
 		},
 	}
