@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/a2sh3r/sysmetrics/internal/agent/collector"
+	"github.com/a2sh3r/sysmetrics/internal/agent/metrics"
 	"github.com/a2sh3r/sysmetrics/internal/agent/sender"
 	"github.com/a2sh3r/sysmetrics/internal/config"
 	"github.com/stretchr/testify/assert"
@@ -13,10 +13,9 @@ import (
 
 func TestAgent_Run(t *testing.T) {
 	type fields struct {
-		collector      *collector.Collector
-		sender         *sender.Sender
-		pollInterval   time.Duration
-		reportInterval time.Duration
+		cfg     *config.AgentConfig
+		metrics *metrics.Metrics
+		sender  *sender.Sender
 	}
 	type args struct {
 		ctx context.Context
@@ -27,12 +26,17 @@ func TestAgent_Run(t *testing.T) {
 		args   args
 	}{
 		{
-			name: "Test #1 run agent with valid intervals",
+			name: "Test #1 run agent with valid config",
 			fields: fields{
-				collector:      &collector.Collector{},
-				sender:         sender.NewSender("http://localhost:8080"),
-				pollInterval:   time.Second,
-				reportInterval: time.Second * 10,
+				cfg: &config.AgentConfig{
+					Address:        "http://localhost:8080",
+					PollInterval:   2,
+					ReportInterval: 10,
+					SecretKey:      "test key",
+					RateLimit:      1,
+				},
+				metrics: metrics.NewMetrics(),
+				sender:  sender.NewSender("http://localhost:8080", "test key"),
 			},
 			args: args{
 				ctx: context.Background(),
@@ -42,10 +46,9 @@ func TestAgent_Run(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			a := &Agent{
-				collector:      tt.fields.collector,
-				sender:         tt.fields.sender,
-				pollInterval:   tt.fields.pollInterval,
-				reportInterval: tt.fields.reportInterval,
+				cfg:     tt.fields.cfg,
+				metrics: tt.fields.metrics,
+				sender:  tt.fields.sender,
 			}
 			ctx, cancel := context.WithCancel(tt.args.ctx)
 			go func() {
@@ -78,13 +81,20 @@ func TestNewAgent(t *testing.T) {
 					Address:        "http://localhost:8080",
 					PollInterval:   2,
 					ReportInterval: 10,
+					SecretKey:      "test key",
+					RateLimit:      1,
 				},
 			},
 			want: &Agent{
-				collector:      &collector.Collector{},
-				sender:         sender.NewSender("http://localhost:8080"),
-				pollInterval:   time.Duration(2) * time.Second,
-				reportInterval: time.Duration(10) * time.Second,
+				cfg: &config.AgentConfig{
+					Address:        "http://localhost:8080",
+					PollInterval:   2,
+					ReportInterval: 10,
+					SecretKey:      "test key",
+					RateLimit:      1,
+				},
+				metrics: metrics.NewMetrics(),
+				sender:  sender.NewSender("http://localhost:8080", "test key"),
 			},
 		},
 	}
@@ -92,7 +102,9 @@ func TestNewAgent(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := NewAgent(tt.args.cfg)
 			assert.NotNil(t, got)
-			assert.Equal(t, tt.want, got)
+			assert.Equal(t, tt.want.cfg, got.cfg)
+			assert.NotNil(t, got.metrics)
+			assert.NotNil(t, got.sender)
 		})
 	}
 }

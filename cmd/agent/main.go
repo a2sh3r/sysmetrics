@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"os"
 	"os/signal"
 	"syscall"
 
@@ -19,11 +20,15 @@ func main() {
 
 	cfg.ParseFlags()
 
-	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer cancel()
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
 	metricAgent := agent.NewAgent(cfg)
 
 	log.Println("Starting agent...")
-	metricAgent.Run(ctx)
+
+	go metricAgent.Run(ctx)
+
+	<-ctx.Done()
+	log.Println("Shutting down agent...")
 }
