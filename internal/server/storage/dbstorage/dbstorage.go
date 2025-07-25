@@ -1,3 +1,4 @@
+// Package dbstorage provides a database-backed implementation of the Storage interface.
 package dbstorage
 
 import (
@@ -5,15 +6,19 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+
+	"go.uber.org/zap"
+
 	"github.com/a2sh3r/sysmetrics/internal/logger"
 	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
-	"go.uber.org/zap"
 )
 
+// DBStorage implements Storage using a SQL database.
 type DBStorage struct {
 	db *sql.DB
 }
 
+// NewDBStorage creates a new DBStorage instance and initializes the metrics table.
 func NewDBStorage(db *sql.DB) (*DBStorage, error) {
 	query := `
 	CREATE TABLE IF NOT EXISTS metrics (
@@ -31,6 +36,7 @@ func NewDBStorage(db *sql.DB) (*DBStorage, error) {
 	return &DBStorage{db: db}, nil
 }
 
+// UpdateMetric updates a metric in the database.
 func (s *DBStorage) UpdateMetric(ctx context.Context, name string, metric repositories.Metric) error {
 	switch metric.Type {
 	case "gauge":
@@ -58,6 +64,7 @@ func (s *DBStorage) UpdateMetric(ctx context.Context, name string, metric reposi
 	}
 }
 
+// GetMetric retrieves a metric from the database.
 func (s *DBStorage) GetMetric(ctx context.Context, name string) (repositories.Metric, error) {
 	query := `SELECT type, delta, value FROM metrics WHERE id = $1`
 	row := s.db.QueryRowContext(ctx, query, name)

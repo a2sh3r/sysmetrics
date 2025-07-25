@@ -5,17 +5,18 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"log"
+	"net/http"
+	"reflect"
+	"time"
+
 	"github.com/a2sh3r/sysmetrics/internal/agent/metrics"
 	"github.com/a2sh3r/sysmetrics/internal/agent/utils"
 	"github.com/a2sh3r/sysmetrics/internal/constants"
 	"github.com/a2sh3r/sysmetrics/internal/hash"
 	"github.com/a2sh3r/sysmetrics/internal/models"
 	"github.com/a2sh3r/sysmetrics/internal/server/middleware"
-	"io"
-	"log"
-	"net/http"
-	"reflect"
-	"time"
 )
 
 type Sender struct {

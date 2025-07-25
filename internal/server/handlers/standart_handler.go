@@ -3,16 +3,19 @@ package handlers
 import (
 	"bytes"
 	"fmt"
-	"github.com/a2sh3r/sysmetrics/internal/constants"
-	"github.com/a2sh3r/sysmetrics/internal/logger"
-	"github.com/go-chi/chi/v5"
-	"go.uber.org/zap"
 	"io"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/go-chi/chi/v5"
+	"go.uber.org/zap"
+
+	"github.com/a2sh3r/sysmetrics/internal/constants"
+	"github.com/a2sh3r/sysmetrics/internal/logger"
 )
 
+// GetMetric handles GET requests for a single metric value.
 func (h *Handler) GetMetric(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -68,6 +71,7 @@ func (h *Handler) GetMetric(w http.ResponseWriter, r *http.Request) {
 	)
 }
 
+// GetMetrics handles GET requests for all metrics.
 func (h *Handler) GetMetrics(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -108,6 +112,7 @@ func (h *Handler) GetMetrics(w http.ResponseWriter, r *http.Request) {
 	)
 }
 
+// UpdateMetric handles POST requests to update a metric by URL parameters.
 func (h *Handler) UpdateMetric(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -179,6 +184,7 @@ func (h *Handler) UpdateMetric(w http.ResponseWriter, r *http.Request) {
 	)
 }
 
+// Ping handles GET requests to check database connectivity.
 func (h *Handler) Ping(w http.ResponseWriter, r *http.Request) {
 	if h.DB != nil {
 		if err := h.DB.PingContext(r.Context()); err != nil {

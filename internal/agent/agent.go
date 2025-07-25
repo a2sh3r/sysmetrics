@@ -1,3 +1,4 @@
+// Package agent implements the main agent logic for collecting and sending metrics.
 package agent
 
 import (
@@ -11,6 +12,7 @@ import (
 	"github.com/a2sh3r/sysmetrics/internal/config"
 )
 
+// Agent represents the metrics agent.
 type Agent struct {
 	cfg     *config.AgentConfig
 	metrics *metrics.Metrics
@@ -19,6 +21,7 @@ type Agent struct {
 	mu      sync.RWMutex
 }
 
+// NewAgent creates a new Agent instance.
 func NewAgent(cfg *config.AgentConfig) *Agent {
 	return &Agent{
 		cfg:     cfg,
@@ -27,6 +30,7 @@ func NewAgent(cfg *config.AgentConfig) *Agent {
 	}
 }
 
+// Run starts the agent's main loop.
 func (a *Agent) Run(ctx context.Context) {
 	a.worker = NewMetricsWorker(a.cfg.RateLimit, a.sendMetrics)
 	a.worker.Start(ctx)
@@ -71,6 +75,7 @@ func (a *Agent) Run(ctx context.Context) {
 	a.worker.Stop()
 }
 
+// sendMetrics sends collected metrics to the server.
 func (a *Agent) sendMetrics(m *metrics.Metrics) error {
 	return a.sender.SendMetricsWithRetries(context.Background(), []*metrics.Metrics{m})
 }

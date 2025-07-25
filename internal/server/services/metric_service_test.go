@@ -3,10 +3,12 @@ package services
 import (
 	"context"
 	"fmt"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+
 	"github.com/a2sh3r/sysmetrics/internal/constants"
 	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
-	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestNewService(t *testing.T) {
@@ -253,6 +255,233 @@ func TestService_GetMetric(t *testing.T) {
 				assert.Equal(t, tt.want, got)
 			}
 		})
+	}
+}
+
+func TestService_UpdateMetricsBatchWithRetry(t *testing.T) {
+	ctx := context.Background()
+	type fields struct {
+		repo MetricRepository
+	}
+	type args struct {
+		metrics map[string]repositories.Metric
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "Batch update with retry: success",
+			fields: fields{
+				repo: &mockRepo{},
+			},
+			args: args{
+				metrics: map[string]repositories.Metric{
+					"gauge1":   {Type: constants.MetricTypeGauge, Value: 1.23},
+					"counter1": {Type: constants.MetricTypeCounter, Value: int64(10)},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Batch update with retry: error",
+			fields: fields{
+				repo: &mockRepo{errOnUpdate: true},
+			},
+			args: args{
+				metrics: map[string]repositories.Metric{
+					"gauge1": {Type: constants.MetricTypeGauge, Value: 1.23},
+				},
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := &Service{
+				repo: tt.fields.repo,
+			}
+			err := s.UpdateMetricsBatchWithRetry(ctx, tt.args.metrics)
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestService_UpdateGaugeMetricWithRetry(t *testing.T) {
+	ctx := context.Background()
+	type fields struct {
+		repo MetricRepository
+	}
+	type args struct {
+		name  string
+		value float64
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
+	}{
+		{
+			name:    "успешный retry update gauge",
+			fields:  fields{repo: &mockRepo{}},
+			args:    args{name: "gauge1", value: 1.23},
+			wantErr: false,
+		},
+		{
+			name:    "ошибка retry update gauge",
+			fields:  fields{repo: &mockRepo{errOnUpdate: true}},
+			args:    args{name: "gauge1", value: 1.23},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := &Service{repo: tt.fields.repo}
+			err := s.UpdateGaugeMetricWithRetry(ctx, tt.args.name, tt.args.value)
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestService_UpdateCounterMetricWithRetry(t *testing.T) {
+	ctx := context.Background()
+	type fields struct {
+		repo MetricRepository
+	}
+	type args struct {
+		name  string
+		value int64
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
+	}{
+		{
+			name:    "успешный retry update counter",
+			fields:  fields{repo: &mockRepo{}},
+			args:    args{name: "counter1", value: 10},
+			wantErr: false,
+		},
+		{
+			name:    "ошибка retry update counter",
+			fields:  fields{repo: &mockRepo{errOnUpdate: true}},
+			args:    args{name: "counter1", value: 10},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := &Service{repo: tt.fields.repo}
+			err := s.UpdateCounterMetricWithRetry(ctx, tt.args.name, tt.args.value)
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestService_GetMetricWithRetry(t *testing.T) {
+	ctx := context.Background()
+	type fields struct {
+		repo MetricRepository
+	}
+	type args struct {
+		name string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    repositories.Metric
+		wantErr bool
+	}{
+		{
+			name:    "успешный retry get metric",
+			fields:  fields{repo: &mockRepo{metrics: map[string]repositories.Metric{"m1": {Type: constants.MetricTypeGauge, Value: 1.23}}}},
+			args:    args{name: "m1"},
+			want:    repositories.Metric{Type: constants.MetricTypeGauge, Value: 1.23},
+			wantErr: false,
+		},
+		{
+			name:    "ошибка retry get metric",
+			fields:  fields{repo: &mockRepo{errOnGet: true}},
+			args:    args{name: "m1"},
+			want:    repositories.Metric{},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := &Service{repo: tt.fields.repo}
+			got, err := s.GetMetricWithRetry(ctx, tt.args.name)
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.want, got)
+			}
+		})
+	}
+}
+
+func TestService_GetMetricsWithRetry(t *testing.T) {
+	ctx := context.Background()
+	type fields struct {
+		repo MetricRepository
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		want    map[string]repositories.Metric
+		wantErr bool
+	}{
+		{
+			name:    "успешный retry get metrics",
+			fields:  fields{repo: &mockRepo{metrics: map[string]repositories.Metric{"m1": {Type: constants.MetricTypeGauge, Value: 1.23}}}},
+			want:    map[string]repositories.Metric{"m1": {Type: constants.MetricTypeGauge, Value: 1.23}},
+			wantErr: false,
+		},
+		{
+			name:    "ошибка retry get metrics",
+			fields:  fields{repo: &mockRepo{errOnGet: true}},
+			want:    map[string]repositories.Metric{},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := &Service{repo: tt.fields.repo}
+			got, err := s.GetMetricsWithRetry(ctx)
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.want, got)
+			}
+		})
+	}
+}
+
+func BenchmarkServiceUpdateMetric(b *testing.B) {
+	s := NewService(&mockRepo{})
+	ctx := context.Background()
+	for i := 0; i < b.N; i++ {
+		_ = s.UpdateGaugeMetric(ctx, "test", 42.0)
 	}
 }
 

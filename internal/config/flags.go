@@ -8,15 +8,18 @@ import (
 	"strings"
 )
 
+// NetAddress represents a network address with host and port.
 type NetAddress struct {
 	Host string
 	Port int
 }
 
+// String returns the string representation of the network address.
 func (n *NetAddress) String() string {
 	return fmt.Sprintf("%s:%d", n.Host, n.Port)
 }
 
+// Set parses and sets the network address from a string.
 func (n *NetAddress) Set(flagValue string) error {
 	parts := strings.Split(flagValue, ":")
 	if len(parts) != 2 {
@@ -33,6 +36,7 @@ func (n *NetAddress) Set(flagValue string) error {
 	return nil
 }
 
+// ParseFlags parses command-line flags into the AgentConfig.
 func (cfg *AgentConfig) ParseFlags() {
 	addr := new(NetAddress)
 
@@ -72,6 +76,7 @@ func (cfg *AgentConfig) ParseFlags() {
 	}
 }
 
+// ParseFlags parses command-line flags into the ServerConfig.
 func (cfg *ServerConfig) ParseFlags() {
 	addr := new(NetAddress)
 

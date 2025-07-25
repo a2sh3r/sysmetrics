@@ -2,11 +2,12 @@ package middleware
 
 import (
 	"bytes"
-	"github.com/a2sh3r/sysmetrics/internal/config"
-	"github.com/a2sh3r/sysmetrics/internal/hash"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/a2sh3r/sysmetrics/internal/config"
+	"github.com/a2sh3r/sysmetrics/internal/hash"
 )
 
 func TestHashMiddleware(t *testing.T) {

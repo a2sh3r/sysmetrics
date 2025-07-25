@@ -1,12 +1,15 @@
 package handlers
 
 import (
+	"net/http"
+
+	"github.com/go-chi/chi/v5"
+
 	"github.com/a2sh3r/sysmetrics/internal/config"
 	"github.com/a2sh3r/sysmetrics/internal/server/middleware"
-	"github.com/go-chi/chi/v5"
-	"net/http"
 )
 
+// NewRouter creates a new chi.Router with all routes and middleware for the metrics server.
 func NewRouter(handler *Handler, cfg *config.ServerConfig) chi.Router {
 	r := chi.NewRouter()
 
