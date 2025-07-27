@@ -1,8 +1,6 @@
 package handlers
 
 import (
-	"context"
-	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -463,21 +461,6 @@ func TestHandler_Ping(t *testing.T) {
 	w := httptest.NewRecorder()
 	h.Ping(w, r)
 	assert.Equal(t, 200, w.Code)
-}
-
-type pinger interface {
-	PingContext(ctx context.Context) error
-}
-
-type mockPinger struct {
-	err bool
-}
-
-func (m *mockPinger) PingContext(ctx context.Context) error {
-	if m.err {
-		return errors.New("ping error")
-	}
-	return nil
 }
 
 func BenchmarkUpdateMetric(b *testing.B) {

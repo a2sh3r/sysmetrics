@@ -127,7 +127,7 @@ func TestNewRestoreConfig(t *testing.T) {
 			assert.Equal(t, tt.expected.Interval, got.Interval)
 			assert.Equal(t, tt.expected.FilePath, got.FilePath)
 			assert.Equal(t, tt.expected.Storage, got.Storage)
-			assert.NotNil(t, got.mu)
+			assert.NotNil(t, &got.mu)
 		})
 	}
 }
@@ -196,9 +196,10 @@ func TestSaveToFile(t *testing.T) {
 			storage.On("GetMetrics", mock.Anything).Return(tt.metrics, tt.getMetricsErr).Maybe()
 
 			if mockFS, ok := tt.fs.(*mockFileSystem); ok {
-				if tt.name == "Create directory error" {
+				switch tt.name {
+				case "Create directory error":
 					mockFS.On("MkdirAll", filepath.Dir(filePath), os.FileMode(0755)).Return(assert.AnError).Once()
-				} else if tt.name == "Open file error" {
+				case "Open file error":
 					mockFS.On("MkdirAll", filepath.Dir(filePath), os.FileMode(0755)).Return(nil).Once()
 					mockFS.On("OpenFile", filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.FileMode(0666)).Return((*os.File)(nil), assert.AnError).Once()
 				}
