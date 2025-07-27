@@ -11,7 +11,27 @@ import (
 	"github.com/a2sh3r/sysmetrics/internal/config"
 )
 
+var buildVersion string
+var buildDate string
+var buildCommit string
+
+func printBuildInfo() {
+	if buildVersion == "" {
+		buildVersion = "N/A"
+	}
+	if buildDate == "" {
+		buildDate = "N/A"
+	}
+	if buildCommit == "" {
+		buildCommit = "N/A"
+	}
+	log.Printf("Build version: %s", buildVersion)
+	log.Printf("Build date: %s", buildDate)
+	log.Printf("Build commit: %s", buildCommit)
+}
+
 func main() {
+	printBuildInfo()
 	cfg, err := config.NewAgentConfig()
 	if err != nil {
 		log.Printf("Error while creating new config: %v", err)

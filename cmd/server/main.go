@@ -9,7 +9,27 @@ import (
 	"github.com/a2sh3r/sysmetrics/internal/server/startup"
 )
 
+var buildVersion string
+var buildDate string
+var buildCommit string
+
+func printBuildInfo() {
+	if buildVersion == "" {
+		buildVersion = "N/A"
+	}
+	if buildDate == "" {
+		buildDate = "N/A"
+	}
+	if buildCommit == "" {
+		buildCommit = "N/A"
+	}
+	println("Build version:", buildVersion)
+	println("Build date:", buildDate)
+	println("Build commit:", buildCommit)
+}
+
 func main() {
+	printBuildInfo()
 	cfg, err := config.NewServerConfig()
 	if err != nil {
 		log.Printf("Error while creating new config: %v", err)
