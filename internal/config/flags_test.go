@@ -13,8 +13,8 @@ func TestNetAddress_String(t *testing.T) {
 		addr NetAddress
 		want string
 	}{
-		{"host:port", NetAddress{"localhost", 8080}, "localhost:8080"},
-		{"empty host", NetAddress{"", 1234}, ":1234"},
+		{"host:port", NetAddress{Port: 8080, Host: "localhost"}, "localhost:8080"},
+		{"empty host", NetAddress{Port: 1234, Host: ""}, ":1234"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

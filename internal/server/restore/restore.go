@@ -23,8 +23,8 @@ import (
 // RConfig holds configuration for the restore service.
 type RConfig struct {
 	Interval int64
-	FilePath string
 	Storage  repositories.Storage
+	FilePath string
 	mu       sync.Mutex
 }
 

@@ -1,3 +1,4 @@
+// Package collector provides functionality for collecting system metrics.
 package collector
 
 import "github.com/a2sh3r/sysmetrics/internal/agent/metrics"

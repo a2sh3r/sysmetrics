@@ -3,6 +3,7 @@ package restore
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -238,7 +239,11 @@ func TestSaveToFile(t *testing.T) {
 				if err != nil {
 					return err
 				}
-				defer file.Close()
+				defer func() {
+					if err := file.Close(); err != nil {
+						fmt.Printf("error while closing file")
+					}
+				}()
 
 				return json.NewEncoder(file).Encode(serializedMetrics)
 			}
@@ -256,8 +261,11 @@ func TestSaveToFile(t *testing.T) {
 				if tt.metrics != nil {
 					file, err := os.Open(filePath)
 					require.NoError(t, err)
-					defer file.Close()
-
+					defer func() {
+						if errFile := file.Close(); errFile != nil {
+							fmt.Printf("error while closing file")
+						}
+					}()
 					var gotMetrics map[string]metricData
 					err = json.NewDecoder(file).Decode(&gotMetrics)
 					require.NoError(t, err)
@@ -285,7 +293,7 @@ func TestStartRestore(t *testing.T) {
 	}
 
 	startRestore := func(config *testRConfig, ctx context.Context) error {
-		restoreTicker := time.NewTicker(time.Duration(config.RConfig.Interval) * time.Second)
+		restoreTicker := time.NewTicker(time.Duration(config.Interval) * time.Second)
 		defer restoreTicker.Stop()
 
 		for {

@@ -9,9 +9,9 @@ import (
 )
 
 type MetricsWorker struct {
+	rateLimit   int64
 	metricsChan chan *metrics.Metrics
 	wg          sync.WaitGroup
-	rateLimit   int64
 	sendFunc    func(*metrics.Metrics) error
 }
 

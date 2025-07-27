@@ -1,3 +1,4 @@
+// Package metrics provides system metrics collection functionality.
 package metrics
 
 import (
@@ -10,6 +11,7 @@ import (
 
 type Metrics struct {
 	PollCount      int64
+	CPUUtilization []float64
 	Alloc          float64
 	BuckHashSys    float64
 	Frees          float64
@@ -40,7 +42,6 @@ type Metrics struct {
 	RandomValue    float64
 	TotalMemory    float64
 	FreeMemory     float64
-	CPUUtilization []float64
 }
 
 func NewMetrics() *Metrics {

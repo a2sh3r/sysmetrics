@@ -36,9 +36,9 @@ func TestHandler_UpdateSerializedMetric(t *testing.T) {
 		name              string
 		mockReaderService ReaderServiceInterface
 		mockWriterService WriterServiceInterface
-		args              args
 		wantStatusCode    int
 		wantContent       string
+		args              args
 	}{
 		{
 			name:              "Test #1 valid gauge metric update",
@@ -107,8 +107,8 @@ func TestHandler_UpdateSerializedMetric(t *testing.T) {
 				res, err := ts.Client().Do(req)
 				require.NoError(t, err)
 				defer func() {
-					if err := res.Body.Close(); err != nil {
-						log.Printf("failed to close res.Body: %v", err)
+					if closeErr := res.Body.Close(); closeErr != nil {
+						log.Printf("failed to close res.Body: %v", closeErr)
 					}
 				}()
 
@@ -128,8 +128,8 @@ func TestHandler_UpdateSerializedMetric(t *testing.T) {
 				res, err := ts.Client().Do(req)
 				require.NoError(t, err)
 				defer func() {
-					if err := res.Body.Close(); err != nil {
-						log.Printf("failed to close res.Body: %v", err)
+					if closeErr := res.Body.Close(); closeErr != nil {
+						log.Printf("failed to close res.Body: %v", closeErr)
 					}
 				}()
 
@@ -160,9 +160,9 @@ func TestHandler_GetSerializedMetric(t *testing.T) {
 		name              string
 		mockReaderService ReaderServiceInterface
 		mockWriterService WriterServiceInterface
-		args              args
 		wantStatusCode    int
 		wantContent       string
+		args              args
 	}{
 		{
 			name: "Test #1 valid counter metric fetch",
@@ -256,8 +256,8 @@ func TestHandler_GetSerializedMetric(t *testing.T) {
 				res, err := ts.Client().Do(req)
 				require.NoError(t, err)
 				defer func() {
-					if err := res.Body.Close(); err != nil {
-						log.Printf("failed to close res.Body.Close: %v", err)
+					if closeErr := res.Body.Close(); closeErr != nil {
+						log.Printf("failed to close res.Body.Close: %v", closeErr)
 					}
 				}()
 
@@ -284,8 +284,8 @@ func TestHandler_GetSerializedMetric(t *testing.T) {
 				res, err := ts.Client().Do(req)
 				require.NoError(t, err)
 				defer func() {
-					if err := res.Body.Close(); err != nil {
-						log.Printf("failed to close res.Body.Close: %v", err)
+					if closeErr := res.Body.Close(); closeErr != nil {
+						log.Printf("failed to close res.Body.Close: %v", closeErr)
 					}
 				}()
 

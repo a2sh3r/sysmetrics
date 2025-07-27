@@ -35,10 +35,10 @@ func TestNewConfig(t *testing.T) {
 
 func TestNewServerConfig(t *testing.T) {
 	tests := []struct {
-		name string
-		setEnv map[string]string
+		name     string
+		setEnv   map[string]string
 		unsetEnv []string
-		wantErr bool
+		wantErr  bool
 	}{
 		{"valid env", map[string]string{"ADDRESS": "localhost:9999"}, nil, false},
 		{"invalid env", map[string]string{"STORE_INTERVAL": "notanint"}, nil, true},
@@ -46,10 +46,10 @@ func TestNewServerConfig(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			for k, v := range tt.setEnv {
-				os.Setenv(k, v)
+				_ = os.Setenv(k, v)
 			}
 			for _, k := range tt.unsetEnv {
-				os.Unsetenv(k)
+				_ = os.Unsetenv(k)
 			}
 			cfg, err := NewServerConfig()
 			if tt.wantErr {
@@ -60,7 +60,7 @@ func TestNewServerConfig(t *testing.T) {
 				assert.NotNil(t, cfg)
 			}
 			for k := range tt.setEnv {
-				os.Unsetenv(k)
+				_ = os.Unsetenv(k)
 			}
 		})
 	}
