@@ -1,3 +1,4 @@
+// Package utils provides utility functions for the agent.
 package utils
 
 import (
@@ -10,9 +11,9 @@ func CompressData(data []byte) ([]byte, error) {
 	writer := gzip.NewWriter(&buf)
 	_, err := writer.Write(data)
 	if err != nil {
-		err := writer.Close()
-		if err != nil {
-			return nil, err
+		closeErr := writer.Close()
+		if closeErr != nil {
+			return nil, closeErr
 		}
 		return nil, err
 	}

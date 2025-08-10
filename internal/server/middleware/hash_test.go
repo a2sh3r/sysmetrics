@@ -8,6 +8,7 @@ import (
 
 	"github.com/a2sh3r/sysmetrics/internal/config"
 	"github.com/a2sh3r/sysmetrics/internal/hash"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestHashMiddleware(t *testing.T) {
@@ -106,6 +107,30 @@ func TestHashMiddleware(t *testing.T) {
 					t.Error("unexpected hash in response headers")
 				}
 			}
+		})
+	}
+}
+
+func TestNewHashMiddleware(t *testing.T) {
+	tests := []struct {
+		name      string
+		secretKey string
+		wantHash  bool
+	}{
+		{"no secret", "", false},
+		{"with secret", "mysecret", true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := &config.ServerConfig{SecretKey: tt.secretKey}
+			mw := NewHashMiddleware(cfg)
+			req := httptest.NewRequest(http.MethodGet, "/", nil)
+			rw := httptest.NewRecorder()
+			h := mw(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(200)
+			}))
+			h.ServeHTTP(rw, req)
+			assert.Equal(t, 200, rw.Code)
 		})
 	}
 }

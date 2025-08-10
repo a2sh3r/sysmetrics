@@ -111,3 +111,65 @@ func BenchmarkSendMetrics(b *testing.B) {
 		_ = s.SendMetrics(ctx, metricsBatch)
 	}
 }
+
+func TestNewSender(t *testing.T) {
+	tests := []struct {
+		name          string
+		serverAddress string
+		secretKey     string
+	}{
+		{
+			name:          "basic",
+			serverAddress: "http://localhost:8080",
+			secretKey:     "secret",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := NewSender(tt.serverAddress, tt.secretKey)
+			assert.NotNil(t, s)
+			assert.Equal(t, tt.serverAddress, s.serverAddress)
+			assert.Equal(t, tt.secretKey, s.secretKey)
+			assert.NotNil(t, s.client)
+		})
+	}
+}
+
+func TestSender_SendMetricsWithRetries(t *testing.T) {
+	tests := []struct {
+		name        string
+		serverFunc  func(w http.ResponseWriter, r *http.Request)
+		wantErr     bool
+	}{
+		{
+			name: "server always 500",
+			serverFunc: func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusInternalServerError)
+			},
+			wantErr: true,
+		},
+		{
+			name: "server always 200",
+			serverFunc: func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusOK)
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			srv := httptest.NewServer(http.HandlerFunc(tt.serverFunc))
+			defer srv.Close()
+			s := NewSender(srv.URL, "")
+			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+			defer cancel()
+			metricsBatch := []*metrics.Metrics{metrics.NewMetrics()}
+			err := s.SendMetricsWithRetries(ctx, metricsBatch)
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}

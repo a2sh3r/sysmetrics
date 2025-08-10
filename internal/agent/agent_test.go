@@ -15,8 +15,8 @@ import (
 func TestAgent_Run(t *testing.T) {
 	type fields struct {
 		cfg     *config.AgentConfig
-		metrics *metrics.Metrics
 		sender  *sender.Sender
+		metrics *metrics.Metrics
 	}
 	type args struct {
 		ctx context.Context

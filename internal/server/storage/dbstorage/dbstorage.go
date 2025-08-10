@@ -169,9 +169,9 @@ func (s *DBStorage) UpdateMetricsBatch(ctx context.Context, metrics map[string]r
 		return fmt.Errorf("failed to prepare counter statement: %w", err)
 	}
 	defer func(stmt *sql.Stmt) {
-		err := stmt.Close()
-		if err != nil {
-			logger.Log.Error("unable to close counter stmt", zap.Error(err))
+		closeErr := stmt.Close()
+		if closeErr != nil {
+			logger.Log.Error("unable to close counter stmt", zap.Error(closeErr))
 		}
 	}(counterStmt)
 
@@ -180,9 +180,9 @@ func (s *DBStorage) UpdateMetricsBatch(ctx context.Context, metrics map[string]r
 		return fmt.Errorf("failed to prepare gauge statement: %w", err)
 	}
 	defer func(stmt *sql.Stmt) {
-		err := stmt.Close()
-		if err != nil {
-			logger.Log.Error("unable to close gauge stmt", zap.Error(err))
+		closeErr := stmt.Close()
+		if closeErr != nil {
+			logger.Log.Error("unable to close gauge stmt", zap.Error(closeErr))
 		}
 	}(gaugeStmt)
 

@@ -33,8 +33,8 @@ func TestHandler_GetMetric(t *testing.T) {
 	tests := []struct {
 		name   string
 		fields fields
-		args   args
 		want   want
+		args   args
 	}{
 		{
 			name: "Test #1 get gauge metric",
@@ -181,8 +181,8 @@ func TestHandler_GetMetric(t *testing.T) {
 			res, err := ts.Client().Do(req)
 			require.NoError(t, err)
 			defer func() {
-				if err := res.Body.Close(); err != nil {
-					t.Errorf("failed to close response body: %v", err)
+				if closeErr := res.Body.Close(); closeErr != nil {
+					t.Errorf("failed to close response body: %v", closeErr)
 				}
 			}()
 
@@ -213,8 +213,8 @@ func TestHandler_GetMetrics(t *testing.T) {
 	tests := []struct {
 		name   string
 		fields fields
-		args   args
 		want   want
+		args   args
 	}{
 		{
 			name: "Test #1 get gauge metric",
@@ -289,8 +289,8 @@ func TestHandler_GetMetrics(t *testing.T) {
 			res, err := ts.Client().Do(req)
 			require.NoError(t, err)
 			defer func() {
-				if err := res.Body.Close(); err != nil {
-					t.Errorf("failed to close response body: %v", err)
+				if closeErr := res.Body.Close(); closeErr != nil {
+					t.Errorf("failed to close response body: %v", closeErr)
 				}
 			}()
 
@@ -326,8 +326,8 @@ func TestHandler_UpdateMetric(t *testing.T) {
 	tests := []struct {
 		name   string
 		fields fields
-		args   args
 		want   want
+		args   args
 	}{
 		{
 			name: "Test #1 update gauge metric",
@@ -439,8 +439,8 @@ func TestHandler_UpdateMetric(t *testing.T) {
 			res, err := ts.Client().Do(req)
 			require.NoError(t, err)
 			defer func() {
-				if err := res.Body.Close(); err != nil {
-					t.Errorf("failed to close response body: %v", err)
+				if closeErr := res.Body.Close(); closeErr != nil {
+					t.Errorf("failed to close response body: %v", closeErr)
 				}
 			}()
 
@@ -453,6 +453,14 @@ func TestHandler_UpdateMetric(t *testing.T) {
 			assert.Equal(t, tt.want.response, string(resBody))
 		})
 	}
+}
+
+func TestHandler_Ping(t *testing.T) {
+	h := &Handler{}
+	r := httptest.NewRequest(http.MethodGet, "/ping", nil)
+	w := httptest.NewRecorder()
+	h.Ping(w, r)
+	assert.Equal(t, 200, w.Code)
 }
 
 func BenchmarkUpdateMetric(b *testing.B) {

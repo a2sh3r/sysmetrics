@@ -1,3 +1,4 @@
+// Package sender provides functionality for sending metrics to the server.
 package sender
 
 import (
@@ -20,8 +21,8 @@ import (
 )
 
 type Sender struct {
-	serverAddress string
 	client        *http.Client
+	serverAddress string
 	secretKey     string
 }
 
@@ -109,8 +110,8 @@ func (s *Sender) sendMetricsBatchJSON(ctx context.Context, metrics []*models.Met
 	}
 	defer func() {
 		if resp != nil && resp.Body != nil {
-			if err := resp.Body.Close(); err != nil {
-				log.Printf("error closing response body: %v", err)
+			if closeErr := resp.Body.Close(); closeErr != nil {
+				log.Printf("error closing response body: %v", closeErr)
 			}
 		}
 	}()

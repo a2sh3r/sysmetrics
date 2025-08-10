@@ -32,7 +32,7 @@ func RunServer(cfg *config.ServerConfig) error {
 	var db *sql.DB
 
 	if cfg.DatabaseDSN != "" {
-		db, err := database.InitDB(cfg)
+		db, err = database.InitDB(cfg)
 		if err != nil {
 			logger.Log.Error("Database connection failed", zap.Error(err))
 			return err
