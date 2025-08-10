@@ -45,6 +45,7 @@ func (cfg *AgentConfig) ParseFlags() {
 		reportInterval float64
 		secretKey      string
 		rateLimit      int64
+		cryptoKey      string
 	)
 
 	flag.Var(addr, "a", "Net address host:port")
@@ -52,6 +53,7 @@ func (cfg *AgentConfig) ParseFlags() {
 	flag.Float64Var(&reportInterval, "r", 10, "report interval to report metrics to server")
 	flag.StringVar(&secretKey, "k", "", "secret key to calculate hash")
 	flag.Int64Var(&rateLimit, "l", 1, "number of parallel workers")
+	flag.StringVar(&cryptoKey, "crypto-key", "", "path to public key file for encryption")
 
 	flag.Parse()
 
@@ -74,6 +76,10 @@ func (cfg *AgentConfig) ParseFlags() {
 	if rateLimit > 0 {
 		cfg.RateLimit = rateLimit
 	}
+
+	if cryptoKey != "" {
+		cfg.CryptoKey = cryptoKey
+	}
 }
 
 // ParseFlags parses command-line flags into the ServerConfig.
@@ -87,6 +93,7 @@ func (cfg *ServerConfig) ParseFlags() {
 		logLevel        string
 		databaseDSN     string
 		secretKey       string
+		cryptoKey       string
 	)
 
 	flag.Var(addr, "a", "Net address host:port")
@@ -96,6 +103,7 @@ func (cfg *ServerConfig) ParseFlags() {
 	flag.BoolVar(&restore, "r", true, "restore metrics on start")
 	flag.StringVar(&databaseDSN, "d", "", "Database DSN")
 	flag.StringVar(&secretKey, "k", "", "secret key to calculate hash")
+	flag.StringVar(&cryptoKey, "crypto-key", "", "path to private key file for decryption")
 
 	flag.Parse()
 
@@ -120,9 +128,9 @@ func (cfg *ServerConfig) ParseFlags() {
 	}
 
 	if envValue, exists := os.LookupEnv("LOG_LEVEL"); exists {
-		cfg.FileStoragePath = envValue
+		cfg.LogLevel = envValue
 	} else {
-		cfg.FileStoragePath = logLevel
+		cfg.LogLevel = logLevel
 	}
 
 	if envValue, exists := os.LookupEnv("RESTORE"); exists {
@@ -153,5 +161,11 @@ func (cfg *ServerConfig) ParseFlags() {
 		cfg.SecretKey = envValue
 	} else {
 		cfg.SecretKey = secretKey
+	}
+
+	if cryptoKey != "" {
+		cfg.CryptoKey = cryptoKey
+	} else if envValue, exists := os.LookupEnv("CRYPTO_KEY"); exists {
+		cfg.CryptoKey = envValue
 	}
 }

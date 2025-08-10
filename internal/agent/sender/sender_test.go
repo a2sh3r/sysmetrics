@@ -104,7 +104,7 @@ func TestSender_SendMetrics(t *testing.T) {
 }
 
 func BenchmarkSendMetrics(b *testing.B) {
-	s := NewSender("http://localhost:8080", "test")
+	s := NewSender("http://localhost:8080", "test", "test")
 	ctx := context.Background()
 	metricsBatch := []*metrics.Metrics{metrics.NewMetrics()}
 	for i := 0; i < b.N; i++ {
@@ -117,16 +117,18 @@ func TestNewSender(t *testing.T) {
 		name          string
 		serverAddress string
 		secretKey     string
+		keyPath       string
 	}{
 		{
 			name:          "basic",
 			serverAddress: "http://localhost:8080",
 			secretKey:     "secret",
+			keyPath:       "keyPath",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := NewSender(tt.serverAddress, tt.secretKey)
+			s := NewSender(tt.serverAddress, tt.secretKey, tt.keyPath)
 			assert.NotNil(t, s)
 			assert.Equal(t, tt.serverAddress, s.serverAddress)
 			assert.Equal(t, tt.secretKey, s.secretKey)
@@ -137,9 +139,9 @@ func TestNewSender(t *testing.T) {
 
 func TestSender_SendMetricsWithRetries(t *testing.T) {
 	tests := []struct {
-		name        string
-		serverFunc  func(w http.ResponseWriter, r *http.Request)
-		wantErr     bool
+		name       string
+		serverFunc func(w http.ResponseWriter, r *http.Request)
+		wantErr    bool
 	}{
 		{
 			name: "server always 500",
@@ -160,7 +162,7 @@ func TestSender_SendMetricsWithRetries(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			srv := httptest.NewServer(http.HandlerFunc(tt.serverFunc))
 			defer srv.Close()
-			s := NewSender(srv.URL, "")
+			s := NewSender(srv.URL, "", "")
 			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 			defer cancel()
 			metricsBatch := []*metrics.Metrics{metrics.NewMetrics()}

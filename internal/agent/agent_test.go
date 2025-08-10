@@ -37,7 +37,7 @@ func TestAgent_Run(t *testing.T) {
 					RateLimit:      1,
 				},
 				metrics: metrics.NewMetrics(),
-				sender:  sender.NewSender("http://localhost:8080", "test key"),
+				sender:  sender.NewSender("http://localhost:8080", "test key", "test key"),
 			},
 			args: args{
 				ctx: context.Background(),
@@ -95,7 +95,7 @@ func TestNewAgent(t *testing.T) {
 					RateLimit:      1,
 				},
 				metrics: metrics.NewMetrics(),
-				sender:  sender.NewSender("http://localhost:8080", "test key"),
+				sender:  sender.NewSender("http://localhost:8080", "test key", ""),
 			},
 		},
 	}
