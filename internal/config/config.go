@@ -14,6 +14,7 @@ type AgentConfig struct {
 	ReportInterval float64 `env:"REPORT_INTERVAL" envDefault:"10"`
 	Address        string  `env:"ADDRESS" envDefault:"localhost:8080"`
 	SecretKey      string  `env:"KEY" envDefault:""`
+	CryptoKey      string  `env:"CRYPTO_KEY" envDefault:""`
 }
 
 // ServerConfig holds configuration for the server.
@@ -25,6 +26,7 @@ type ServerConfig struct {
 	DatabaseDSN     string `env:"DATABASE_DSN" envDefault:""`
 	SecretKey       string `env:"KEY" envDefault:""`
 	Restore         bool   `env:"RESTORE" envDefault:"true"`
+	CryptoKey       string `env:"CRYPTO_KEY" envDefault:""`
 }
 
 // NewAgentConfig creates a new AgentConfig from environment variables.
