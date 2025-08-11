@@ -26,7 +26,7 @@ func NewAgent(cfg *config.AgentConfig) *Agent {
 	return &Agent{
 		cfg:     cfg,
 		metrics: metrics.NewMetrics(),
-		sender:  sender.NewSender(cfg.Address, cfg.SecretKey),
+		sender:  sender.NewSender(cfg.Address, cfg.SecretKey, cfg.CryptoKey),
 	}
 }
 

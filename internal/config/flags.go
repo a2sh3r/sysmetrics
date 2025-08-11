@@ -37,7 +37,10 @@ func (n *NetAddress) Set(flagValue string) error {
 }
 
 // ParseFlags parses command-line flags into the AgentConfig.
+// This function should be called after NewAgentConfig() to override values with flags.
 func (cfg *AgentConfig) ParseFlags() {
+	fs := flag.NewFlagSet("agent", flag.ExitOnError)
+
 	addr := new(NetAddress)
 
 	var (
@@ -45,15 +48,19 @@ func (cfg *AgentConfig) ParseFlags() {
 		reportInterval float64
 		secretKey      string
 		rateLimit      int64
+		cryptoKey      string
 	)
 
-	flag.Var(addr, "a", "Net address host:port")
-	flag.Float64Var(&pollInterval, "p", 2, "poll interval to collect metrics")
-	flag.Float64Var(&reportInterval, "r", 10, "report interval to report metrics to server")
-	flag.StringVar(&secretKey, "k", "", "secret key to calculate hash")
-	flag.Int64Var(&rateLimit, "l", 1, "number of parallel workers")
+	fs.Var(addr, "a", "Net address host:port")
+	fs.Float64Var(&pollInterval, "p", 2, "poll interval to collect metrics")
+	fs.Float64Var(&reportInterval, "r", 10, "report interval to report metrics to server")
+	fs.StringVar(&secretKey, "k", "", "secret key to calculate hash")
+	fs.Int64Var(&rateLimit, "l", 1, "number of parallel workers")
+	fs.StringVar(&cryptoKey, "crypto-key", "", "path to public key file for encryption")
 
-	flag.Parse()
+	if err := fs.Parse(os.Args[1:]); err != nil {
+		return
+	}
 
 	if addr.Port != 0 {
 		cfg.Address = "http://" + addr.String()
@@ -74,10 +81,17 @@ func (cfg *AgentConfig) ParseFlags() {
 	if rateLimit > 0 {
 		cfg.RateLimit = rateLimit
 	}
+
+	if cryptoKey != "" {
+		cfg.CryptoKey = cryptoKey
+	}
 }
 
 // ParseFlags parses command-line flags into the ServerConfig.
+// This function should be called after NewServerConfig() to override values with flags.
 func (cfg *ServerConfig) ParseFlags() {
+	fs := flag.NewFlagSet("server", flag.ExitOnError)
+
 	addr := new(NetAddress)
 
 	var (
@@ -87,56 +101,52 @@ func (cfg *ServerConfig) ParseFlags() {
 		logLevel        string
 		databaseDSN     string
 		secretKey       string
+		cryptoKey       string
 	)
 
-	flag.Var(addr, "a", "Net address host:port")
-	flag.IntVar(&storeInterval, "i", 300, "store interval in seconds")
-	flag.StringVar(&fileStoragePath, "f", "/tmp/metrics-db.json", "file path to store metrics")
-	flag.StringVar(&logLevel, "l", "info", "log level")
-	flag.BoolVar(&restore, "r", true, "restore metrics on start")
-	flag.StringVar(&databaseDSN, "d", "", "Database DSN")
-	flag.StringVar(&secretKey, "k", "", "secret key to calculate hash")
+	fs.Var(addr, "a", "Net address host:port")
+	fs.IntVar(&storeInterval, "i", 300, "store interval in seconds")
+	fs.StringVar(&fileStoragePath, "f", "/tmp/metrics-db.json", "file path to store metrics")
+	fs.StringVar(&logLevel, "l", "info", "log level")
+	fs.BoolVar(&restore, "r", true, "restore metrics on start")
+	fs.StringVar(&databaseDSN, "d", "", "Database DSN")
+	fs.StringVar(&secretKey, "k", "", "secret key to calculate hash")
+	fs.StringVar(&cryptoKey, "crypto-key", "", "path to private key file for decryption")
 
-	flag.Parse()
+	if err := fs.Parse(os.Args[1:]); err != nil {
+		return
+	}
 
 	if addr.Port != 0 {
 		cfg.Address = addr.String()
 	}
 
-	if envValue, exists := os.LookupEnv("STORE_INTERVAL"); exists {
-		val, err := strconv.Atoi(envValue)
-		if err != nil {
-			return
-		}
-		cfg.StoreInterval = val
-	} else {
+	if storeInterval > 0 {
 		cfg.StoreInterval = storeInterval
 	}
 
-	if envValue, exists := os.LookupEnv("FILE_STORAGE_PATH"); exists {
-		cfg.FileStoragePath = envValue
-	} else {
+	if fileStoragePath != "" {
 		cfg.FileStoragePath = fileStoragePath
 	}
 
-	if envValue, exists := os.LookupEnv("LOG_LEVEL"); exists {
-		cfg.FileStoragePath = envValue
-	} else {
-		cfg.FileStoragePath = logLevel
+	if logLevel != "" {
+		cfg.LogLevel = logLevel
 	}
 
-	if envValue, exists := os.LookupEnv("RESTORE"); exists {
-		if value, err := strconv.ParseBool(envValue); err == nil {
-			cfg.Restore = value
-		}
-	} else {
+	if fs.Lookup("r") != nil && fs.Lookup("r").Value.String() != "" {
 		cfg.Restore = restore
 	}
 
 	if databaseDSN != "" {
 		cfg.DatabaseDSN = databaseDSN
-	} else if envValue, exists := os.LookupEnv("DATABASE_DSN"); exists {
-		cfg.DatabaseDSN = envValue
+	}
+
+	if secretKey != "" {
+		cfg.SecretKey = secretKey
+	}
+
+	if cryptoKey != "" {
+		cfg.CryptoKey = cryptoKey
 	}
 
 	if cfg.DatabaseDSN != "" && !strings.Contains(cfg.DatabaseDSN, "host=") {
@@ -147,11 +157,5 @@ func (cfg *ServerConfig) ParseFlags() {
 		} else {
 			cfg.DatabaseDSN = "host=localhost " + cfg.DatabaseDSN
 		}
-	}
-
-	if envValue, exists := os.LookupEnv("KEY"); exists {
-		cfg.SecretKey = envValue
-	} else {
-		cfg.SecretKey = secretKey
 	}
 }
