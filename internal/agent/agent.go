@@ -26,7 +26,7 @@ func NewAgent(cfg *config.AgentConfig) *Agent {
 	return &Agent{
 		cfg:     cfg,
 		metrics: metrics.NewMetrics(),
-		sender:  sender.NewSender(cfg.Address, cfg.SecretKey),
+		sender:  sender.NewSender(cfg.Address, cfg.SecretKey, cfg.CryptoKey),
 	}
 }
 
@@ -35,15 +35,22 @@ func (a *Agent) Run(ctx context.Context) {
 	a.worker = NewMetricsWorker(a.cfg.RateLimit, a.sendMetrics)
 	a.worker.Start(ctx)
 
-	go func() {
-		ticker := time.NewTicker(time.Duration(a.cfg.PollInterval) * time.Second)
-		defer ticker.Stop()
+	metricsTicker := time.NewTicker(time.Duration(a.cfg.PollInterval) * time.Second)
+	defer metricsTicker.Stop()
 
+	systemTicker := time.NewTicker(time.Duration(a.cfg.PollInterval) * time.Second)
+	defer systemTicker.Stop()
+
+	done := make(chan struct{})
+
+	go func() {
+		defer close(done)
 		for {
 			select {
 			case <-ctx.Done():
+				log.Println("Metrics collection stopped")
 				return
-			case <-ticker.C:
+			case <-metricsTicker.C:
 				a.mu.Lock()
 				a.metrics = metrics.NewMetrics()
 				a.mu.Unlock()
@@ -53,14 +60,12 @@ func (a *Agent) Run(ctx context.Context) {
 	}()
 
 	go func() {
-		ticker := time.NewTicker(time.Duration(a.cfg.PollInterval) * time.Second)
-		defer ticker.Stop()
-
 		for {
 			select {
 			case <-ctx.Done():
+				log.Println("System metrics update stopped")
 				return
-			case <-ticker.C:
+			case <-systemTicker.C:
 				a.mu.Lock()
 				if err := a.metrics.UpdateSystemMetrics(); err != nil {
 					log.Printf("Error updating system metrics: %v", err)
@@ -72,7 +77,12 @@ func (a *Agent) Run(ctx context.Context) {
 	}()
 
 	<-ctx.Done()
+	log.Println("Agent shutdown initiated, waiting for operations to complete...")
+
 	a.worker.Stop()
+
+	<-done
+	log.Println("All agent operations completed")
 }
 
 // sendMetrics sends collected metrics to the server.
