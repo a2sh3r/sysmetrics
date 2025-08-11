@@ -65,9 +65,12 @@ func RunServer(cfg *config.ServerConfig) error {
 
 	restoreConfig := restore.NewRestoreConfig(int64(cfg.StoreInterval), cfg.FileStoragePath, storage)
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	if cfg.StoreInterval != 0 {
 		go func() {
-			if err := restoreConfig.StartRestore(context.Background()); err != nil {
+			if err := restoreConfig.StartRestore(ctx); err != nil {
 				logger.Log.Error("Restore service failed", zap.Error(err))
 			}
 		}()
@@ -83,11 +86,14 @@ func RunServer(cfg *config.ServerConfig) error {
 	}
 
 	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
 	go func() {
-		<-quit
-		logger.Log.Info("Shutting down server...")
+		sig := <-quit
+		logger.Log.Info("Received shutdown signal", zap.String("signal", sig.String()))
+		logger.Log.Info("Shutting down server gracefully...")
+
+		cancel()
 
 		if err := restoreConfig.SaveToFile(); err != nil {
 			logger.Log.Error("Error saving metrics on shutdown", zap.Error(err))
@@ -95,10 +101,13 @@ func RunServer(cfg *config.ServerConfig) error {
 			logger.Log.Info("Metrics successfully saved before shutdown")
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		if err := srv.Shutdown(ctx); err != nil {
+		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer shutdownCancel()
+
+		if err := srv.Shutdown(shutdownCtx); err != nil {
 			logger.Log.Error("Server shutdown error", zap.Error(err))
+		} else {
+			logger.Log.Info("HTTP server gracefully stopped")
 		}
 	}()
 
@@ -111,6 +120,9 @@ func RunServer(cfg *config.ServerConfig) error {
 	if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return err
 	}
+
+	<-ctx.Done()
+	logger.Log.Info("Server shutdown completed")
 
 	return nil
 }
