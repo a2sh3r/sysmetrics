@@ -41,7 +41,11 @@ func loadConfigFile(configPath string, config interface{}) error {
 	if err != nil {
 		return fmt.Errorf("failed to open config file: %w", err)
 	}
-	defer file.Close()
+	defer func() {
+		if closeErr := file.Close(); closeErr != nil {
+			fmt.Printf("warning: failed to close config file: %v\n", closeErr)
+		}
+	}()
 
 	decoder := json.NewDecoder(file)
 	if err := decoder.Decode(config); err != nil {
@@ -61,7 +65,9 @@ func getConfigPath() string {
 	fs.StringVar(&configPath, "c", "", "path to config file")
 	fs.StringVar(&configPath, "config", "", "path to config file")
 
-	fs.Parse(os.Args[1:])
+	if err := fs.Parse(os.Args[1:]); err != nil {
+		return ""
+	}
 
 	return configPath
 }

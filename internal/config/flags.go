@@ -58,7 +58,9 @@ func (cfg *AgentConfig) ParseFlags() {
 	fs.Int64Var(&rateLimit, "l", 1, "number of parallel workers")
 	fs.StringVar(&cryptoKey, "crypto-key", "", "path to public key file for encryption")
 
-	fs.Parse(os.Args[1:])
+	if err := fs.Parse(os.Args[1:]); err != nil {
+		return
+	}
 
 	if addr.Port != 0 {
 		cfg.Address = "http://" + addr.String()
@@ -111,7 +113,9 @@ func (cfg *ServerConfig) ParseFlags() {
 	fs.StringVar(&secretKey, "k", "", "secret key to calculate hash")
 	fs.StringVar(&cryptoKey, "crypto-key", "", "path to private key file for decryption")
 
-	fs.Parse(os.Args[1:])
+	if err := fs.Parse(os.Args[1:]); err != nil {
+		return
+	}
 
 	if addr.Port != 0 {
 		cfg.Address = addr.String()
