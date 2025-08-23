@@ -15,6 +15,7 @@ import (
 	"github.com/a2sh3r/sysmetrics/internal/agent/metrics"
 	"github.com/a2sh3r/sysmetrics/internal/agent/utils"
 	"github.com/a2sh3r/sysmetrics/internal/constants"
+	"github.com/a2sh3r/sysmetrics/internal/crypto"
 	"github.com/a2sh3r/sysmetrics/internal/hash"
 	"github.com/a2sh3r/sysmetrics/internal/models"
 	"github.com/a2sh3r/sysmetrics/internal/server/middleware"
@@ -24,13 +25,24 @@ type Sender struct {
 	client        *http.Client
 	serverAddress string
 	secretKey     string
+	encryptor     *crypto.Encryptor
 }
 
-func NewSender(serverAddress string, secretKey string) *Sender {
+func NewSender(serverAddress string, secretKey string, cryptoKeyPath string) *Sender {
+	var encryptor *crypto.Encryptor
+	if cryptoKeyPath != "" {
+		var err error
+		encryptor, err = crypto.NewEncryptor(cryptoKeyPath)
+		if err != nil {
+			log.Printf("Warning: failed to initialize encryptor: %v", err)
+		}
+	}
+
 	return &Sender{
 		serverAddress: serverAddress,
 		client:        &http.Client{},
 		secretKey:     secretKey,
+		encryptor:     encryptor,
 	}
 }
 
@@ -86,7 +98,18 @@ func (s *Sender) sendMetricsBatchJSON(ctx context.Context, metrics []*models.Met
 		return fmt.Errorf("failed to marshal metrics batch: %w", err)
 	}
 
-	compressedData, err := utils.CompressData(data)
+	var finalData []byte
+	if s.encryptor != nil {
+		encryptedData, encryptErr := s.encryptor.Encrypt(data)
+		if encryptErr != nil {
+			return fmt.Errorf("failed to encrypt metrics batch: %w", encryptErr)
+		}
+		finalData = encryptedData
+	} else {
+		finalData = data
+	}
+
+	compressedData, err := utils.CompressData(finalData)
 	if err != nil {
 		return fmt.Errorf("failed to compress metrics batch: %w", err)
 	}
@@ -98,6 +121,10 @@ func (s *Sender) sendMetricsBatchJSON(ctx context.Context, metrics []*models.Met
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Content-Encoding", "gzip")
+
+	if s.encryptor != nil {
+		req.Header.Set("X-Encrypted", "true")
+	}
 
 	if s.secretKey != "" {
 		calculateHash := hash.CalculateHash(string(data), s.secretKey)

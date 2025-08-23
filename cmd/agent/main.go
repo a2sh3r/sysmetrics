@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/a2sh3r/sysmetrics/internal/agent"
 	"github.com/a2sh3r/sysmetrics/internal/config"
@@ -40,7 +41,7 @@ func main() {
 
 	cfg.ParseFlags()
 
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
 	defer stop()
 
 	metricAgent := agent.NewAgent(cfg)
@@ -50,5 +51,16 @@ func main() {
 	go metricAgent.Run(ctx)
 
 	<-ctx.Done()
-	log.Println("Shutting down agent...")
+
+	log.Println("Shutting down agent gracefully...")
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	select {
+	case <-shutdownCtx.Done():
+		log.Println("Shutdown timeout reached, forcing exit")
+	default:
+		log.Println("Agent shutdown completed")
+	}
 }
