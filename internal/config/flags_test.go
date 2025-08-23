@@ -4,6 +4,8 @@ import (
 	"flag"
 	"os"
 	"testing"
+	"time"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -56,27 +58,27 @@ func TestAgentConfig_ParseFlags(t *testing.T) {
 		name      string
 		args      []string
 		wantAddr  string
-		wantPoll  float64
-		wantRep   float64
+		wantPoll  Duration
+		wantRep   Duration
 		wantKey   string
 		wantLimit int64
 	}{
 		{
-			name:     "all flags",
-			args:     []string{"cmd", "-a", "localhost:8081", "-p", "5", "-r", "15", "-k", "secret", "-l", "3"},
-			wantAddr: "http://localhost:8081",
-			wantPoll: 5,
-			wantRep:  15,
-			wantKey:  "secret",
+			name:      "all flags",
+			args:      []string{"cmd", "-a", "localhost:8081", "-p", "5s", "-r", "15s", "-k", "secret", "-l", "3"},
+			wantAddr:  "http://localhost:8081",
+			wantPoll:  Duration{5 * time.Second},
+			wantRep:   Duration{15 * time.Second},
+			wantKey:   "secret",
 			wantLimit: 3,
 		},
 		{
-			name:     "defaults",
-			args:     []string{"cmd"},
-			wantAddr: "",
-			wantPoll: 2,
-			wantRep:  10,
-			wantKey:  "",
+			name:      "defaults",
+			args:      []string{"cmd"},
+			wantAddr:  "",
+			wantPoll:  Duration{2 * time.Second},
+			wantRep:   Duration{10 * time.Second},
+			wantKey:   "",
 			wantLimit: 1,
 		},
 	}
@@ -93,4 +95,4 @@ func TestAgentConfig_ParseFlags(t *testing.T) {
 			assert.Equal(t, tt.wantLimit, cfg.RateLimit)
 		})
 	}
-} 
+}

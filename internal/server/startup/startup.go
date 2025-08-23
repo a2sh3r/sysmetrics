@@ -63,12 +63,12 @@ func RunServer(cfg *config.ServerConfig) error {
 	metricService := services.NewService(metricRepo)
 	handler := handlers.NewHandler(metricService, metricService, db)
 
-	restoreConfig := restore.NewRestoreConfig(int64(cfg.StoreInterval), cfg.FileStoragePath, storage)
+	restoreConfig := restore.NewRestoreConfig(int64(cfg.StoreInterval.Seconds()), cfg.FileStoragePath, storage)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	if cfg.StoreInterval != 0 {
+	if cfg.StoreInterval.Duration != 0 {
 		go func() {
 			if err := restoreConfig.StartRestore(ctx); err != nil {
 				logger.Log.Error("Restore service failed", zap.Error(err))
@@ -113,7 +113,7 @@ func RunServer(cfg *config.ServerConfig) error {
 
 	logger.Log.Info("Server is starting",
 		zap.String("address", cfg.Address),
-		zap.Int("store_interval", cfg.StoreInterval),
+		zap.Duration("store_interval", cfg.StoreInterval.Duration),
 		zap.String("storage_path", cfg.FileStoragePath),
 		zap.Bool("restore", cfg.Restore))
 

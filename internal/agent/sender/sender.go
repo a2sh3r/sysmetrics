@@ -122,6 +122,13 @@ func (s *Sender) sendMetricsBatchJSON(ctx context.Context, metrics []*models.Met
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Content-Encoding", "gzip")
 
+	localIP, err := utils.GetLocalIP()
+	if err != nil {
+		return fmt.Errorf("failed to get local IP: %w", err)
+	}
+
+	req.Header.Set("X-Real-IP", localIP)
+
 	if s.encryptor != nil {
 		req.Header.Set("X-Encrypted", "true")
 	}

@@ -2,6 +2,7 @@ package sender
 
 import (
 	"context"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -167,6 +168,66 @@ func TestSender_SendMetricsWithRetries(t *testing.T) {
 			defer cancel()
 			metricsBatch := []*metrics.Metrics{metrics.NewMetrics()}
 			err := s.SendMetricsWithRetries(ctx, metricsBatch)
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestSender_SendMetricWithIPHeader(t *testing.T) {
+	tests := []struct {
+		name          string
+		serverAddress string
+		secretKey     string
+		metricsBatch  []*metrics.Metrics
+		checkIPHeader bool
+		wantErr       bool
+	}{
+		{
+			name:          "metrics with IP Header",
+			serverAddress: "http://localhost:8080",
+			secretKey:     "test key",
+			metricsBatch: []*metrics.Metrics{
+				{
+					PollCount: int64(1),
+					HeapAlloc: 12345.67,
+				},
+			},
+			checkIPHeader: true,
+			wantErr:       false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if tt.checkIPHeader {
+					realIP := r.Header.Get("X-Real-IP")
+					if realIP == "" {
+						t.Error("expected ip header")
+					}
+					if net.ParseIP(realIP) == nil {
+						t.Errorf("invalid IP address in header: %s", realIP)
+					}
+				}
+				w.WriteHeader(http.StatusOK)
+			}))
+			defer srv.Close()
+
+			if tt.serverAddress == "http://localhost:8080" {
+				tt.serverAddress = srv.URL
+			}
+
+			s := &Sender{
+				serverAddress: tt.serverAddress,
+				client:        &http.Client{Timeout: 5 * time.Second},
+				secretKey:     tt.secretKey,
+			}
+
+			err := s.SendMetrics(context.Background(), tt.metricsBatch)
 			if tt.wantErr {
 				assert.Error(t, err)
 			} else {
