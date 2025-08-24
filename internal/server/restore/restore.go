@@ -109,24 +109,36 @@ func (b *RConfig) SaveToFile() error {
 	}
 
 	if err := json.NewEncoder(file).Encode(serializedMetrics); err != nil {
-		file.Close()
-		os.Remove(tempFile)
+		if fileErr := file.Close(); fileErr != nil {
+			return fmt.Errorf("failed to close file: %w", fileErr)
+		}
+		if osErr := os.Remove(tempFile); osErr != nil {
+			return fmt.Errorf("failed to close file: %w", osErr)
+		}
 		return fmt.Errorf("failed to encode metrics to JSON: %w", err)
 	}
 
 	if err := file.Sync(); err != nil {
-		file.Close()
-		os.Remove(tempFile)
+		if fileErr := file.Close(); fileErr != nil {
+			return fmt.Errorf("failed to close file: %w", fileErr)
+		}
+		if osErr := os.Remove(tempFile); osErr != nil {
+			return fmt.Errorf("failed to close file: %w", osErr)
+		}
 		return fmt.Errorf("failed to sync file: %w", err)
 	}
 
 	if err := file.Close(); err != nil {
-		os.Remove(tempFile)
+		if osErr := os.Remove(tempFile); osErr != nil {
+			return fmt.Errorf("failed to close file: %w", osErr)
+		}
 		return fmt.Errorf("failed to close temp file: %w", err)
 	}
 
 	if err := os.Rename(tempFile, b.FilePath); err != nil {
-		os.Remove(tempFile)
+		if osErr := os.Remove(tempFile); osErr != nil {
+			return fmt.Errorf("failed to close file: %w", osErr)
+		}
 		return fmt.Errorf("failed to rename temp file to final location: %w", err)
 	}
 
@@ -147,8 +159,8 @@ func RestoreFromFile(filename string) (*memstorage.MemStorage, error) {
 		return nil, ErrRestoreFromFile
 	}
 	defer func() {
-		if err := file.Close(); err != nil {
-			log.Printf("failed to close file.Close: %v", err)
+		if fileErr := file.Close(); fileErr != nil {
+			log.Printf("failed to close file.Close: %v", fileErr)
 		}
 	}()
 

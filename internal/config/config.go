@@ -50,7 +50,7 @@ func (d *Duration) UnmarshalText(text []byte) error {
 
 // MarshalJSON implements json.Marshaler
 func (d Duration) MarshalJSON() ([]byte, error) {
-	return json.Marshal(d.Duration.String())
+	return json.Marshal(d.String())
 }
 
 // AgentConfig holds configuration for the agent.
