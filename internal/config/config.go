@@ -61,6 +61,8 @@ type AgentConfig struct {
 	Address        string   `env:"ADDRESS" envDefault:"localhost:8080" json:"address,omitempty"`
 	SecretKey      string   `env:"KEY" envDefault:"" json:"key,omitempty"`
 	CryptoKey      string   `env:"CRYPTO_KEY" envDefault:"" json:"crypto_key,omitempty"`
+	Protocol       string   `env:"PROTOCOL" envDefault:"http" json:"protocol,omitempty"`
+	GRPCAddress    string   `env:"GRPC_ADDRESS" envDefault:"localhost:9090" json:"grpc_address,omitempty"`
 }
 
 // ServerConfig holds configuration for the server.
@@ -74,6 +76,7 @@ type ServerConfig struct {
 	Restore         bool     `env:"RESTORE" envDefault:"true" json:"restore,omitempty"`
 	CryptoKey       string   `env:"CRYPTO_KEY" envDefault:"" json:"crypto_key,omitempty"`
 	TrustedSubnet   string   `env:"TRUSTED_SUBNET" envDefault:"" json:"trusted_subnet,omitempty"`
+	GRPCAddress     string   `env:"GRPC_ADDRESS" envDefault:"localhost:9090" json:"grpc_address,omitempty"`
 }
 
 func loadConfigFile(configPath string, config interface{}) error {

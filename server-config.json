@@ -1,9 +1,10 @@
 {
-    "address": "localhost:8080",
-    "restore": true, 
-    "store_interval": "1s", 
-    "store_file": "/Users/michaelzainutdinov/Documents/Projects/file.db.json", 
-    "database_dsn": "", 
-    "crypto_key": "",
-    "trusted_subnet": "192.168.1.0/24"
+  "address": "localhost:8080",
+  "grpc_address": "",
+  "store_interval": "300s",
+  "store_file": "/Users/michaelzainutdinov/Documents/Projects/metrics-db.json",
+  "restore": true,
+  "key": "",
+  "crypto_key": "",
+  "trusted_subnet": ""
 }

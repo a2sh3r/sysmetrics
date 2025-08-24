@@ -16,6 +16,8 @@ import (
 	"github.com/a2sh3r/sysmetrics/internal/config"
 	"github.com/a2sh3r/sysmetrics/internal/logger"
 	"github.com/a2sh3r/sysmetrics/internal/server/database"
+	grpcserver "github.com/a2sh3r/sysmetrics/internal/server/grpc"
+	grpchandlers "github.com/a2sh3r/sysmetrics/internal/server/grpc/handlers"
 	"github.com/a2sh3r/sysmetrics/internal/server/handlers"
 	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
 	"github.com/a2sh3r/sysmetrics/internal/server/restore"
@@ -85,6 +87,19 @@ func RunServer(cfg *config.ServerConfig) error {
 		Handler: srvMux,
 	}
 
+	var grpcSrv *grpcserver.Server
+	if cfg.GRPCAddress != "" {
+		grpcHandler := grpchandlers.NewMetricsHandler(metricService)
+		grpcSrv = grpcserver.NewServer(cfg, grpcHandler)
+
+		go func() {
+			logger.Log.Info("Starting gRPC server", zap.String("address", cfg.GRPCAddress))
+			if err := grpcSrv.Start(); err != nil {
+				logger.Log.Error("gRPC server failed", zap.Error(err))
+			}
+		}()
+	}
+
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
@@ -99,6 +114,11 @@ func RunServer(cfg *config.ServerConfig) error {
 			logger.Log.Error("Error saving metrics on shutdown", zap.Error(err))
 		} else {
 			logger.Log.Info("Metrics successfully saved before shutdown")
+		}
+
+		if grpcSrv != nil {
+			grpcSrv.Stop()
+			logger.Log.Info("gRPC server stopped gracefully")
 		}
 
 		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)

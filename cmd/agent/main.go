@@ -10,6 +10,7 @@ import (
 
 	"github.com/a2sh3r/sysmetrics/internal/agent"
 	"github.com/a2sh3r/sysmetrics/internal/config"
+	"github.com/a2sh3r/sysmetrics/internal/logger"
 )
 
 var buildVersion string
@@ -33,6 +34,12 @@ func printBuildInfo() {
 
 func main() {
 	printBuildInfo()
+	
+	if err := logger.Initialize("info"); err != nil {
+		log.Printf("Failed to initialize logger: %v", err)
+		return
+	}
+	
 	cfg, err := config.NewAgentConfig()
 	if err != nil {
 		log.Printf("Error while creating new config: %v", err)

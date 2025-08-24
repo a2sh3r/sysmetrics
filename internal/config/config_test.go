@@ -21,6 +21,8 @@ func TestNewConfig(t *testing.T) {
 				ReportInterval: Duration{10 * time.Second},
 				Address:        "http://localhost:8080",
 				RateLimit:      1,
+				Protocol:       "http",
+				GRPCAddress:    "localhost:9090",
 			},
 		},
 	}
