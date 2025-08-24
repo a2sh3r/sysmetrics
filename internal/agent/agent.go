@@ -35,10 +35,10 @@ func (a *Agent) Run(ctx context.Context) {
 	a.worker = NewMetricsWorker(a.cfg.RateLimit, a.sendMetrics)
 	a.worker.Start(ctx)
 
-	metricsTicker := time.NewTicker(time.Duration(a.cfg.PollInterval) * time.Second)
+	metricsTicker := time.NewTicker(a.cfg.PollInterval.Duration)
 	defer metricsTicker.Stop()
 
-	systemTicker := time.NewTicker(time.Duration(a.cfg.PollInterval) * time.Second)
+	systemTicker := time.NewTicker(a.cfg.PollInterval.Duration)
 	defer systemTicker.Stop()
 
 	done := make(chan struct{})

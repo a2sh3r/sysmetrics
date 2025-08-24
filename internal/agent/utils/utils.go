@@ -4,6 +4,7 @@ package utils
 import (
 	"bytes"
 	"compress/gzip"
+	"net"
 )
 
 func CompressData(data []byte) ([]byte, error) {
@@ -21,4 +22,20 @@ func CompressData(data []byte) ([]byte, error) {
 		return nil, err
 	}
 	return buf.Bytes(), nil
+}
+
+// GetLocalIP returns the local IP address that would be used for outbound connections.
+func GetLocalIP() (string, error) {
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		return "", err
+	}
+	defer func() {
+		if err := conn.Close(); err != nil {
+			return
+		}
+	}()
+
+	localAddr := conn.LocalAddr().(*net.UDPAddr)
+	return localAddr.IP.String(), nil
 }

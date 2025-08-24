@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"net"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -20,13 +21,12 @@ func TestCompressData(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:    "writer error (simulate)",
-			input:   []byte{},
+			name:  "writer error (simulate)",
+			input: []byte{},
 			modify: func() func() {
-				// monkey patch gzip.NewWriter to return a broken writer if needed (not trivial in Go, so skip real error simulation)
 				return func() {}
 			},
-			wantErr: false, // can't easily simulate error without unsafe hacks
+			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
@@ -71,4 +71,35 @@ func TestCompressData_EdgeCases(t *testing.T) {
 			}
 		})
 	}
-} 
+}
+
+func TestGetLocalIP(t *testing.T) {
+	tests := []struct {
+		name    string
+		wantErr bool
+	}{
+		{
+			name:    "get local IP",
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ip, err := GetLocalIP()
+			if tt.wantErr {
+				assert.Error(t, err)
+				assert.Empty(t, ip)
+			} else {
+				assert.NoError(t, err)
+				assert.NotEmpty(t, ip)
+
+				parsedIP := net.ParseIP(ip)
+				assert.NotNil(t, parsedIP, "should return valid IP address")
+
+				assert.NotEqual(t, "127.0.0.1", ip, "should not return localhost")
+				assert.NotEqual(t, "::1", ip, "should not return IPv6 localhost")
+			}
+		})
+	}
+}
