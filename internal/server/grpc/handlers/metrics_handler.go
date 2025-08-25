@@ -6,7 +6,7 @@ import (
 
 	"github.com/a2sh3r/sysmetrics/internal/constants"
 	"github.com/a2sh3r/sysmetrics/internal/server/services"
-	pb "github.com/a2sh3r/sysmetrics/proto/metrics"
+	pb "github.com/a2sh3r/sysmetrics/pkg/api/grpc/metrics"
 )
 
 // MetricsHandler implements the gRPC MetricsService

@@ -17,7 +17,7 @@ import (
 	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
 	"github.com/a2sh3r/sysmetrics/internal/server/services"
 	"github.com/a2sh3r/sysmetrics/internal/server/storage/memstorage"
-	pb "github.com/a2sh3r/sysmetrics/proto/metrics"
+	pb "github.com/a2sh3r/sysmetrics/pkg/api/grpc/metrics"
 )
 
 func TestGRPCServer(t *testing.T) {

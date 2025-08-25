@@ -16,7 +16,7 @@ import (
 	"github.com/a2sh3r/sysmetrics/internal/crypto"
 	"github.com/a2sh3r/sysmetrics/internal/hash"
 	"github.com/a2sh3r/sysmetrics/internal/logger"
-	pb "github.com/a2sh3r/sysmetrics/proto/metrics"
+	pb "github.com/a2sh3r/sysmetrics/pkg/api/grpc/metrics"
 	"go.uber.org/zap"
 )
 

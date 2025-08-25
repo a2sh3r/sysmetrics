@@ -6,17 +6,14 @@ option go_package = "github.com/a2sh3r/sysmetrics/proto/metrics";
 
 service MetricsService {
   rpc UpdateMetric(UpdateMetricRequest) returns (UpdateMetricResponse);
-  
   rpc UpdateMetricsBatch(UpdateMetricsBatchRequest) returns (UpdateMetricsBatchResponse);
-  
   rpc GetMetric(GetMetricRequest) returns (GetMetricResponse);
-  
   rpc GetMetrics(GetMetricsRequest) returns (GetMetricsResponse);
 }
 
 message Metric {
   string id = 1;
-  string type = 2;
+  string type = 2; 
   double value = 3;
   int64 delta = 4;
 }
@@ -46,11 +43,11 @@ message GetMetricRequest {
 
 message GetMetricResponse {
   Metric metric = 1;
-  string error = 2;
+  bool found = 2;
+  string error = 3;
 }
 
-message GetMetricsRequest {
-}
+message GetMetricsRequest {}
 
 message GetMetricsResponse {
   repeated Metric metrics = 1;

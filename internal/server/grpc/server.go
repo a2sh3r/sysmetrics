@@ -12,7 +12,7 @@ import (
 	"github.com/a2sh3r/sysmetrics/internal/config"
 	"github.com/a2sh3r/sysmetrics/internal/crypto"
 	grpcinterceptors "github.com/a2sh3r/sysmetrics/internal/server/grpc/interceptors"
-	pb "github.com/a2sh3r/sysmetrics/proto/metrics"
+	pb "github.com/a2sh3r/sysmetrics/pkg/api/grpc/metrics"
 )
 
 // Server represents the gRPC server
