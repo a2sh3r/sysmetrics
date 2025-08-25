@@ -3,42 +3,69 @@ package agent
 
 import (
 	"context"
-	"log"
 	"sync"
 	"time"
 
+	grpcclient "github.com/a2sh3r/sysmetrics/internal/agent/grpc"
 	"github.com/a2sh3r/sysmetrics/internal/agent/metrics"
 	"github.com/a2sh3r/sysmetrics/internal/agent/sender"
 	"github.com/a2sh3r/sysmetrics/internal/config"
+	"github.com/a2sh3r/sysmetrics/internal/logger"
+	"go.uber.org/zap"
 )
 
 // Agent represents the metrics agent.
 type Agent struct {
-	cfg     *config.AgentConfig
-	metrics *metrics.Metrics
-	worker  *MetricsWorker
-	sender  *sender.Sender
-	mu      sync.RWMutex
+	cfg        *config.AgentConfig
+	metrics    *metrics.Metrics
+	worker     *MetricsWorker
+	sender     *sender.Sender
+	grpcClient *grpcclient.Client
+	mu         sync.RWMutex
 }
 
 // NewAgent creates a new Agent instance.
 func NewAgent(cfg *config.AgentConfig) *Agent {
-	return &Agent{
+	agent := &Agent{
 		cfg:     cfg,
 		metrics: metrics.NewMetrics(),
-		sender:  sender.NewSender(cfg.Address, cfg.SecretKey, cfg.CryptoKey),
 	}
+
+	logger.Log.Info("Initializing agent",
+		zap.String("protocol", cfg.Protocol),
+		zap.String("address", cfg.Address),
+		zap.String("grpc_address", cfg.GRPCAddress),
+		zap.Duration("poll_interval", cfg.PollInterval.Duration),
+		zap.Duration("report_interval", cfg.ReportInterval.Duration),
+		zap.Int64("rate_limit", cfg.RateLimit))
+
+	if cfg.Protocol == "grpc" {
+		grpcClient, err := grpcclient.NewClient(cfg.GRPCAddress, cfg.SecretKey, cfg.CryptoKey)
+		if err != nil {
+			logger.Log.Error("Failed to create gRPC client", zap.Error(err))
+		} else {
+			agent.grpcClient = grpcClient
+			logger.Log.Info("gRPC client initialized successfully")
+		}
+	} else {
+		agent.sender = sender.NewSender(cfg.Address, cfg.SecretKey, cfg.CryptoKey)
+		logger.Log.Info("HTTP sender initialized successfully")
+	}
+
+	return agent
 }
 
 // Run starts the agent's main loop.
 func (a *Agent) Run(ctx context.Context) {
+	logger.Log.Info("Starting agent main loop")
+	
 	a.worker = NewMetricsWorker(a.cfg.RateLimit, a.sendMetrics)
 	a.worker.Start(ctx)
 
-	metricsTicker := time.NewTicker(time.Duration(a.cfg.PollInterval) * time.Second)
+	metricsTicker := time.NewTicker(a.cfg.PollInterval.Duration)
 	defer metricsTicker.Stop()
 
-	systemTicker := time.NewTicker(time.Duration(a.cfg.PollInterval) * time.Second)
+	systemTicker := time.NewTicker(a.cfg.PollInterval.Duration)
 	defer systemTicker.Stop()
 
 	done := make(chan struct{})
@@ -48,7 +75,7 @@ func (a *Agent) Run(ctx context.Context) {
 		for {
 			select {
 			case <-ctx.Done():
-				log.Println("Metrics collection stopped")
+				logger.Log.Info("Metrics collection stopped")
 				return
 			case <-metricsTicker.C:
 				a.mu.Lock()
@@ -63,12 +90,12 @@ func (a *Agent) Run(ctx context.Context) {
 		for {
 			select {
 			case <-ctx.Done():
-				log.Println("System metrics update stopped")
+				logger.Log.Info("System metrics update stopped")
 				return
 			case <-systemTicker.C:
 				a.mu.Lock()
 				if err := a.metrics.UpdateSystemMetrics(); err != nil {
-					log.Printf("Error updating system metrics: %v", err)
+					logger.Log.Error("Error updating system metrics", zap.Error(err))
 				}
 				a.mu.Unlock()
 				a.worker.SendMetrics(a.metrics)
@@ -77,15 +104,37 @@ func (a *Agent) Run(ctx context.Context) {
 	}()
 
 	<-ctx.Done()
-	log.Println("Agent shutdown initiated, waiting for operations to complete...")
+	logger.Log.Info("Agent shutdown initiated, waiting for operations to complete...")
 
 	a.worker.Stop()
 
 	<-done
-	log.Println("All agent operations completed")
+	logger.Log.Info("All agent operations completed")
 }
 
 // sendMetrics sends collected metrics to the server.
 func (a *Agent) sendMetrics(m *metrics.Metrics) error {
-	return a.sender.SendMetricsWithRetries(context.Background(), []*metrics.Metrics{m})
+	logger.Log.Debug("Sending metrics to server",
+		zap.String("protocol", a.cfg.Protocol),
+		zap.Float64("alloc", m.Alloc),
+		zap.Float64("heap_alloc", m.HeapAlloc),
+		zap.Int64("poll_count", m.PollCount))
+
+	if a.cfg.Protocol == "grpc" && a.grpcClient != nil {
+		err := a.grpcClient.SendMetricsBatch(context.Background(), m)
+		if err != nil {
+			logger.Log.Error("Failed to send metrics via gRPC", zap.Error(err))
+		} else {
+			logger.Log.Debug("Metrics sent successfully via gRPC")
+		}
+		return err
+	}
+
+	err := a.sender.SendMetricsWithRetries(context.Background(), []*metrics.Metrics{m})
+	if err != nil {
+		logger.Log.Error("Failed to send metrics via HTTP", zap.Error(err))
+	} else {
+		logger.Log.Debug("Metrics sent successfully via HTTP")
+	}
+	return err
 }

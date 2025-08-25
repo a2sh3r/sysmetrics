@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -80,12 +81,17 @@ func (b *RConfig) SaveToFile() error {
 
 	dir := filepath.Dir(b.FilePath)
 	if err := os.MkdirAll(dir, 0755); err != nil {
-		return err
+		return fmt.Errorf("failed to create directory: %w", err)
 	}
 
 	metrics, err := b.Storage.GetMetrics(ctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get metrics from storage: %w", err)
+	}
+
+	if len(metrics) == 0 {
+		logger.Log.Info("No metrics to save, skipping file creation")
+		return nil
 	}
 
 	serializedMetrics := make(map[string]metricData)
@@ -96,20 +102,46 @@ func (b *RConfig) SaveToFile() error {
 		}
 	}
 
-	file, err := os.OpenFile(b.FilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
+	tempFile := b.FilePath + ".tmp"
+	file, err := os.OpenFile(tempFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create temp file: %w", err)
 	}
-	defer func() {
-		if err := file.Close(); err != nil {
-			log.Printf("failed to close file.Close: %v", err)
-		}
-	}()
 
 	if err := json.NewEncoder(file).Encode(serializedMetrics); err != nil {
-		logger.Log.Error("Error encoding metrics to JSON", zap.Error(err))
-		return err
+		if fileErr := file.Close(); fileErr != nil {
+			return fmt.Errorf("failed to close file: %w", fileErr)
+		}
+		if osErr := os.Remove(tempFile); osErr != nil {
+			return fmt.Errorf("failed to close file: %w", osErr)
+		}
+		return fmt.Errorf("failed to encode metrics to JSON: %w", err)
 	}
+
+	if err := file.Sync(); err != nil {
+		if fileErr := file.Close(); fileErr != nil {
+			return fmt.Errorf("failed to close file: %w", fileErr)
+		}
+		if osErr := os.Remove(tempFile); osErr != nil {
+			return fmt.Errorf("failed to close file: %w", osErr)
+		}
+		return fmt.Errorf("failed to sync file: %w", err)
+	}
+
+	if err := file.Close(); err != nil {
+		if osErr := os.Remove(tempFile); osErr != nil {
+			return fmt.Errorf("failed to close file: %w", osErr)
+		}
+		return fmt.Errorf("failed to close temp file: %w", err)
+	}
+
+	if err := os.Rename(tempFile, b.FilePath); err != nil {
+		if osErr := os.Remove(tempFile); osErr != nil {
+			return fmt.Errorf("failed to close file: %w", osErr)
+		}
+		return fmt.Errorf("failed to rename temp file to final location: %w", err)
+	}
+
 	return nil
 }
 
@@ -127,10 +159,22 @@ func RestoreFromFile(filename string) (*memstorage.MemStorage, error) {
 		return nil, ErrRestoreFromFile
 	}
 	defer func() {
-		if err := file.Close(); err != nil {
-			log.Printf("failed to close file.Close: %v", err)
+		if fileErr := file.Close(); fileErr != nil {
+			log.Printf("failed to close file.Close: %v", fileErr)
 		}
 	}()
+
+	// Check if file is empty
+	fileInfo, err := file.Stat()
+	if err != nil {
+		logger.Log.Error("Error getting file info", zap.String("filename", filename), zap.Error(err))
+		return nil, ErrRestoreFromFile
+	}
+
+	if fileInfo.Size() == 0 {
+		logger.Log.Info("File is empty, creating new storage", zap.String("filename", filename))
+		return memstorage.NewMemStorage(), nil
+	}
 
 	var serializedMetrics map[string]metricData
 	if err := json.NewDecoder(file).Decode(&serializedMetrics); err != nil {

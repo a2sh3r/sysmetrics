@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // NetAddress represents a network address with host and port.
@@ -44,16 +45,19 @@ func (cfg *AgentConfig) ParseFlags() {
 	addr := new(NetAddress)
 
 	var (
-		pollInterval   float64
-		reportInterval float64
+		configPath     string
+		pollInterval   string
+		reportInterval string
 		secretKey      string
 		rateLimit      int64
 		cryptoKey      string
 	)
 
+	fs.StringVar(&configPath, "c", "", "path to config file")
+	fs.StringVar(&configPath, "config", "", "path to config file")
 	fs.Var(addr, "a", "Net address host:port")
-	fs.Float64Var(&pollInterval, "p", 2, "poll interval to collect metrics")
-	fs.Float64Var(&reportInterval, "r", 10, "report interval to report metrics to server")
+	fs.StringVar(&pollInterval, "p", "2s", "poll interval (e.g., 2s, 1m, 30s)")
+	fs.StringVar(&reportInterval, "r", "10s", "report interval (e.g., 10s, 1m, 30s)")
 	fs.StringVar(&secretKey, "k", "", "secret key to calculate hash")
 	fs.Int64Var(&rateLimit, "l", 1, "number of parallel workers")
 	fs.StringVar(&cryptoKey, "crypto-key", "", "path to public key file for encryption")
@@ -66,12 +70,16 @@ func (cfg *AgentConfig) ParseFlags() {
 		cfg.Address = "http://" + addr.String()
 	}
 
-	if pollInterval > 0 {
-		cfg.PollInterval = pollInterval
+	if pollInterval != "" {
+		if duration, err := time.ParseDuration(pollInterval); err == nil {
+			cfg.PollInterval = Duration{duration}
+		}
 	}
 
-	if reportInterval > 0 {
-		cfg.ReportInterval = reportInterval
+	if reportInterval != "" {
+		if duration, err := time.ParseDuration(reportInterval); err == nil {
+			cfg.ReportInterval = Duration{duration}
+		}
 	}
 
 	if secretKey != "" {
@@ -95,23 +103,28 @@ func (cfg *ServerConfig) ParseFlags() {
 	addr := new(NetAddress)
 
 	var (
-		storeInterval   int
+		configPath      string
+		storeInterval   string
 		fileStoragePath string
 		restore         bool
 		logLevel        string
 		databaseDSN     string
 		secretKey       string
 		cryptoKey       string
+		trustedSubnet   string
 	)
 
+	fs.StringVar(&configPath, "c", "", "path to config file")
+	fs.StringVar(&configPath, "config", "", "path to config file")
 	fs.Var(addr, "a", "Net address host:port")
-	fs.IntVar(&storeInterval, "i", 300, "store interval in seconds")
-	fs.StringVar(&fileStoragePath, "f", "/tmp/metrics-db.json", "file path to store metrics")
+	fs.StringVar(&storeInterval, "i", "", "store interval (e.g., 300s, 5m, 1h)")
+	fs.StringVar(&fileStoragePath, "f", "", "file path to store metrics")
 	fs.StringVar(&logLevel, "l", "info", "log level")
 	fs.BoolVar(&restore, "r", true, "restore metrics on start")
 	fs.StringVar(&databaseDSN, "d", "", "Database DSN")
 	fs.StringVar(&secretKey, "k", "", "secret key to calculate hash")
 	fs.StringVar(&cryptoKey, "crypto-key", "", "path to private key file for decryption")
+	fs.StringVar(&trustedSubnet, "t", "", "trusted subnet CIDR")
 
 	if err := fs.Parse(os.Args[1:]); err != nil {
 		return
@@ -121,8 +134,10 @@ func (cfg *ServerConfig) ParseFlags() {
 		cfg.Address = addr.String()
 	}
 
-	if storeInterval > 0 {
-		cfg.StoreInterval = storeInterval
+	if storeInterval != "" {
+		if duration, err := time.ParseDuration(storeInterval); err == nil {
+			cfg.StoreInterval = Duration{duration}
+		}
 	}
 
 	if fileStoragePath != "" {
@@ -147,6 +162,10 @@ func (cfg *ServerConfig) ParseFlags() {
 
 	if cryptoKey != "" {
 		cfg.CryptoKey = cryptoKey
+	}
+
+	if trustedSubnet != "" {
+		cfg.TrustedSubnet = trustedSubnet
 	}
 
 	if cfg.DatabaseDSN != "" && !strings.Contains(cfg.DatabaseDSN, "host=") {

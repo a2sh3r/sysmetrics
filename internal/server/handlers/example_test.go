@@ -119,7 +119,6 @@ func ExampleHandler_GetMetric() {
 	svc, ts := newTestServer()
 	defer ts.Close()
 
-	// Сначала добавим метрику через update
 	err := svc.UpdateGaugeMetricWithRetry(context.Background(), "testGauge", 123.45)
 	if err != nil {
 		return
@@ -145,7 +144,6 @@ func ExampleHandler_GetSerializedMetric() {
 	svc, ts := newTestServer()
 	defer ts.Close()
 
-	// Сначала добавим метрику через update
 	err := svc.UpdateGaugeMetricWithRetry(context.Background(), "Alloc", 123.45)
 	if err != nil {
 		return

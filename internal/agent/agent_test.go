@@ -31,8 +31,8 @@ func TestAgent_Run(t *testing.T) {
 			fields: fields{
 				cfg: &config.AgentConfig{
 					Address:        "http://localhost:8080",
-					PollInterval:   2,
-					ReportInterval: 10,
+					PollInterval:   config.Duration{Duration: 2 * time.Second},
+					ReportInterval: config.Duration{Duration: 10 * time.Second},
 					SecretKey:      "test key",
 					RateLimit:      1,
 				},
@@ -80,8 +80,8 @@ func TestNewAgent(t *testing.T) {
 			args: args{
 				cfg: &config.AgentConfig{
 					Address:        "http://localhost:8080",
-					PollInterval:   2,
-					ReportInterval: 10,
+					PollInterval:   config.Duration{Duration: 2 * time.Second},
+					ReportInterval: config.Duration{Duration: 10 * time.Second},
 					SecretKey:      "test key",
 					RateLimit:      1,
 				},
@@ -89,8 +89,8 @@ func TestNewAgent(t *testing.T) {
 			want: &Agent{
 				cfg: &config.AgentConfig{
 					Address:        "http://localhost:8080",
-					PollInterval:   2,
-					ReportInterval: 10,
+					PollInterval:   config.Duration{Duration: 2 * time.Second},
+					ReportInterval: config.Duration{Duration: 10 * time.Second},
 					SecretKey:      "test key",
 					RateLimit:      1,
 				},
@@ -113,8 +113,8 @@ func TestNewAgent(t *testing.T) {
 func BenchmarkAgentRun(b *testing.B) {
 	cfg := &config.AgentConfig{
 		Address:        "http://localhost:8080",
-		PollInterval:   2,
-		ReportInterval: 10,
+		PollInterval:   config.Duration{Duration: 2 * time.Second},
+		ReportInterval: config.Duration{Duration: 10 * time.Second},
 	}
 	agent := NewAgent(cfg)
 	ctx, cancel := context.WithCancel(context.Background())

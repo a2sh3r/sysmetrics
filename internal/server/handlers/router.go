@@ -17,6 +17,7 @@ func NewRouter(handler *Handler, cfg *config.ServerConfig) chi.Router {
 	r.Use(middleware.NewLoggingMiddleware())
 	r.Use(middleware.NewGzipMiddleware())
 	r.Use(middleware.NewHashMiddleware(cfg))
+	r.Use(middleware.NewIPCheckMiddleware(cfg))
 
 	if cfg.CryptoKey != "" {
 		decryptMiddleware, err := middleware.NewDecryptMiddleware(cfg.CryptoKey)

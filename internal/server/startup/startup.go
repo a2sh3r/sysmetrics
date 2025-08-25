@@ -16,6 +16,8 @@ import (
 	"github.com/a2sh3r/sysmetrics/internal/config"
 	"github.com/a2sh3r/sysmetrics/internal/logger"
 	"github.com/a2sh3r/sysmetrics/internal/server/database"
+	grpcserver "github.com/a2sh3r/sysmetrics/internal/server/grpc"
+	grpchandlers "github.com/a2sh3r/sysmetrics/internal/server/grpc/handlers"
 	"github.com/a2sh3r/sysmetrics/internal/server/handlers"
 	"github.com/a2sh3r/sysmetrics/internal/server/repositories"
 	"github.com/a2sh3r/sysmetrics/internal/server/restore"
@@ -63,12 +65,12 @@ func RunServer(cfg *config.ServerConfig) error {
 	metricService := services.NewService(metricRepo)
 	handler := handlers.NewHandler(metricService, metricService, db)
 
-	restoreConfig := restore.NewRestoreConfig(int64(cfg.StoreInterval), cfg.FileStoragePath, storage)
+	restoreConfig := restore.NewRestoreConfig(int64(cfg.StoreInterval.Seconds()), cfg.FileStoragePath, storage)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	if cfg.StoreInterval != 0 {
+	if cfg.StoreInterval.Duration != 0 {
 		go func() {
 			if err := restoreConfig.StartRestore(ctx); err != nil {
 				logger.Log.Error("Restore service failed", zap.Error(err))
@@ -83,6 +85,19 @@ func RunServer(cfg *config.ServerConfig) error {
 	srv := &http.Server{
 		Addr:    cfg.Address,
 		Handler: srvMux,
+	}
+
+	var grpcSrv *grpcserver.Server
+	if cfg.GRPCAddress != "" {
+		grpcHandler := grpchandlers.NewMetricsHandler(metricService)
+		grpcSrv = grpcserver.NewServer(cfg, grpcHandler)
+
+		go func() {
+			logger.Log.Info("Starting gRPC server", zap.String("address", cfg.GRPCAddress))
+			if err := grpcSrv.Start(); err != nil {
+				logger.Log.Error("gRPC server failed", zap.Error(err))
+			}
+		}()
 	}
 
 	quit := make(chan os.Signal, 1)
@@ -101,6 +116,11 @@ func RunServer(cfg *config.ServerConfig) error {
 			logger.Log.Info("Metrics successfully saved before shutdown")
 		}
 
+		if grpcSrv != nil {
+			grpcSrv.Stop()
+			logger.Log.Info("gRPC server stopped gracefully")
+		}
+
 		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer shutdownCancel()
 
@@ -113,7 +133,7 @@ func RunServer(cfg *config.ServerConfig) error {
 
 	logger.Log.Info("Server is starting",
 		zap.String("address", cfg.Address),
-		zap.Int("store_interval", cfg.StoreInterval),
+		zap.Duration("store_interval", cfg.StoreInterval.Duration),
 		zap.String("storage_path", cfg.FileStoragePath),
 		zap.Bool("restore", cfg.Restore))
 
